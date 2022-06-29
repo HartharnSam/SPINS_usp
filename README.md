@@ -1,7 +1,6 @@
-%% Title
+# QSP for SPINS
 
-
-%% Introduction to method (what is QSP, why do we want to use it?)
+## Introduction to method (what is QSP, why do we want to use it?)
 
 QSP, or joint probability plots tell us where two variables overlap, so we can find out if, when and where we get combinations of two variables. 
 
@@ -12,11 +11,11 @@ It is a Baysean technique that finds the unity of the two properties.
 Unlike other methods typically used to investigate mixing, it is primarily qualitative, but it informs us where mixing takes place, and the fluid parcels that have undergone mixing, as well as the fact we can change the physical domain of interest easily (which we can't do for a sorting algorithm). 
 
 
-%% Research questions available using this method
+## Research questions available using this method
 - Tracing how fluid parcels change as they move through physical space
 - Tagging of fluid parcels - we can map back from QSP to physical space
 
-%% Tools provided:
+## Tools provided:
 - MATLAB QSP_mapped (easy to adjust parameters and run local analysis)
 - MATLAB QSP_to_physical
 - SPINS qsp (best for large simulations or 3D)
@@ -29,11 +28,11 @@ There's a switch in qsp_to_physical (isInvert) which needs to be manually change
 
 Note, when we use a square measure you do essentially squash low values together, and stretch the high values togehter, so consider this. 
 
-%% Choosing the criterion for QSP space
-.[1] Based on the initial conditions (focus on the region that has changed)
-.[2] An interesting feature on the QSP space
-.[3] Some kind of pre-determined criteria (exceeding a threshold)
+## Choosing the criterion for QSP space
+1. Based on the initial conditions (focus on the region that has changed)
+2. An interesting feature on the QSP space
+3. Some kind of pre-determined criteria (exceeding a threshold)
 Perhaps may be a bit hand-wavey (we know that super high KE values are probably bs, low KE is boring). 
 
-%% References
+## References
 Penney et al 2020
