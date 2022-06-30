@@ -46,9 +46,9 @@ else
 end
 
 if nargin>4
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, xlims, var_lims);
+    [qsp, myVar1, myKE] = qsp_mapped(ii, var1, var2, xlims, var_lims);
 else
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, xlims);
+    [qsp, myVar1, myKE] = qsp_mapped(ii, var1, var2, xlims);
 end
 
 %% Set region of interest
@@ -69,8 +69,7 @@ xmax_ind = nearest_index(x(:, 1), xlims(2));
 x = x(xmin_ind:xmax_ind, :);
 z = zgrid_reader(xmin_ind:xmax_ind, []);
 
-% note we still read in any z data from the region we want to cut due to
-% the complicated cheb grid
+% note we still read in any z data from the region we want to cut 
 switch var1
     case 's'
         data1 = spins_reader_new('s',ii, xmin_ind:xmax_ind, []);
@@ -107,7 +106,7 @@ switch lower(var2)
         data2 = sqrt(u.^2 + w.^2);
     otherwise
         try 
-            data2 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
+            data = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
         catch
             error([var2, ' not configured']);
         end
@@ -126,6 +125,8 @@ end
 %% Plot it up
 % These are the upper plots of the variables in physical space
 figure(2)
+%betterplots;
+%ax1 = subaxis(3, 1, 1);
 ax1 = subplot(3, 1, 1);
 pcolor(ax1, x, z, data1); shading flat;
 title(['t = ', num2str(ii)]);
@@ -133,11 +134,12 @@ colormap(gca, cmocean('dense'));
 caxis(var1_lim);
 c = colorbar('location', 'EastOutside');
 ylabel(c, var1); ylabel('z (m)');
-axis([xlims zlims])
+axis tight
 xticklabels([]);
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 
+%ax2 = subaxis(3, 1, 2);
 ax2 = subplot(3, 1, 2);
 pcolor(ax2, x, z, data2); shading flat;
 if strcmpi(var2, 'vorty')
@@ -150,17 +152,17 @@ c = colorbar('Location', 'EastOutside');
 ylabel(c, var2); xlabel('x (m'); ylabel('z (m)');
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
-axis([xlims zlims])
+axis tight
 
 % Plot the QSP part
+%subaxis(3, 1, 3);
 ax3 = subplot(3, 1, 3);
 pcolor(myVar1, myKE, log10(qsp));
 shading flat;
 colormap(gca, plasma);
 caxis([-6 -2]);
 c = colorbar; ylabel(c, 'Volume');
-axis([var_lims(3) var_lims(4) var_lims(1) var_lims(2)]);
-axis square;
+axis tight; axis square;
 box on
 hold on
 rectangle('Position', [var1_lim(1) var2_lim(1) diff(var1_lim) diff(var2_lim)],...
