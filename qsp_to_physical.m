@@ -36,6 +36,7 @@ isInvert = false;
 params = spins_params;
 if nargin<4
     xlims = [params.min_x params.min_x+params.Lx];
+    phys_lims = xlims;
 else
     xlims = phys_lims([1 2]);
 end
@@ -43,12 +44,13 @@ if nargin >=4 && numel(phys_lims) == 4
     zlims = phys_lims([3 4]);
 else
     zlims = [params.min_z params.min_z+params.Lz];
+    phys_lims([3 4]) = zlims;
 end
 
 if nargin>4
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, xlims, var_lims);
+    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, phys_lims, var_lims);
 else
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, xlims);
+    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, phys_lims);
 end
 
 %% Set region of interest
@@ -147,7 +149,7 @@ else
 end
 caxis(var2_lim);
 c = colorbar('Location', 'EastOutside');
-ylabel(c, var2); xlabel('x (m'); ylabel('z (m)');
+ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 axis([xlims zlims])
