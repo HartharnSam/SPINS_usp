@@ -116,8 +116,8 @@ switch lower(var2)
 end
 
 %% Extract QSP region of interest from physical data
-RegOfInterest = (~((data1 > var1_lim(1)) & (data1 < var1_lim(2)) & (data2 > var2_lim(1))...
-    & (data2 < var2_lim(2))));
+RegOfInterest = (~((data1 >= var1_lim(1)) & (data1 =< var1_lim(2)) & (data2 >= var2_lim(1))...
+    & (data2 =< var2_lim(2))));
 if isInvert
     data1(~RegOfInterest) = NaN;
     data2(~RegOfInterest) = NaN;
@@ -125,6 +125,7 @@ else
     data1(RegOfInterest) = NaN;
     data2(RegOfInterest) = NaN;
 end
+
 %% Plot it up
 % These are the upper plots of the variables in physical space
 figure(2)
