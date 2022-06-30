@@ -1,7 +1,7 @@
 function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims, var_lims)
-%QSP_MAPPED - One line description of what the function or script performs (H1 line)%Optional file header info (to give more details about the function than in the H1 line)
-%Optional file header info (to give more details about the function than in the H1 line)
-%Optional file header info (to give more details about the function than in the H1 line)
+%QSP_MAPPED - produces QSP, or joint probability plots to tell us where two
+%variables overlap, so we can find out if, when and where we get
+%combinations of two variables.
 %
 % Syntax:  [qsp, myVar1, myke, ke_lims] = qsp_mapped(ii, var1, xlims, var2_lims)
 %
@@ -12,6 +12,9 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims,
 %    phys_lims - [optional] Region of physical space [xmin xmax zmin zmax], can only
 %    specify the x limits. Defaults to full size of tank
 %    var_lims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
+%
+%   [NOTE] - var lims are in the order var2, var1 - it seems
+%   counterintuative, but more likely to set only the y limits than only x!
 %
 % Outputs:
 %    qsp - Histogram of combined volume
@@ -33,16 +36,24 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims,
 % 14-Jun-2022; Last revision: 20-Jun-2022
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 
+% Dev notes: 
+% - I think this won't work for anything that isn't FOURIER in x, cheb in
+% z. Relatively minor changes needed if they are simply the other way
+% around, more if they are both fourier? 
+%---------------------------------------------------
+%% BEGIN CODE %%
+%---------------------------------------------------
+
 close all;
 
 % read in the grids & cut down to size
 params = spins_params;
 if nargin<4
-    phys_lims = [params.min_x params.min_x+params.Lx];
+    xlims = [params.min_x params.min_x+params.Lx];
 else
     xlims = phys_lims([1 2]);
 end
-if numel(phys_lims) == 4
+if nargin >=4 && numel(phys_lims) == 4
     zlims = phys_lims([3 4]);
 else
     zlims = [params.min_z params.min_z+params.Lz];
@@ -95,7 +106,7 @@ switch lower(var2)
         data2 = sqrt(u.^2 + w.^2);
     otherwise
         try
-            data1 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
+            data2 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
         catch
             error([var2, ' not configured']);
         end
@@ -139,44 +150,46 @@ else % Use defaults for the var1 limits
         var1max = max(data1(:));
     end
 end
-% Cap the values at the limits - ignoring these values by NaN'ing them would be a reasonable chocould have chosen to 
+% Cap the values at the limits - ignoring these values by NaN'ing them
+% would be a reasonable choice, but requires some more coding to make it
+% work
 data1(data1<var1min) = var1min;
 data1(data1>var1max) = var1max;
 
 ranges = var1max-var1min;
-ds = ranges/(numpts-1);
-myVar1 = var1min+(0.5:numpts-0.5)*ds;
+dVar1 = ranges/(numpts-1);
+myVar1 = var1min+(0.5:numpts-0.5)*dVar1;
 
 % For variable on y (KE)
-if nargin<=4
-    kemin = min(data2(:));
-    kemax = max(data2(:));
+if nargin<=4 % Use defaults
+    var2min = min(data2(:));
+    var2max = max(data2(:));
 else
-    kemin = var_lims(1);
-    kemax = var_lims(2);
+    var2min = var_lims(1);
+    var2max = var_lims(2);
 end
-data2(data2<kemin) = kemin;
-data2(data2>kemax) = kemax;
+data2(data2<var2min) = var2min;
+data2(data2>var2max) = var2max;
 
-rangeke = kemax-kemin;
-dke = rangeke/(numpts-1);
-myVar2 = kemin+(0.5:numpts-0.5)'*dke;
+rangeVar2 = var2max-var2min;
+dVar2 = rangeVar2/(numpts-1);
+myVar2 = var2min+(0.5:numpts-0.5)'*dVar2;
 
 myhist = zeros(numpts,numpts);
 
 %figure out which box coordinate you are in
-sbox = ceil((data1-var1min)/ds);
-sbox = sbox+1*(data1==var1min);
+var1box = ceil((data1-var1min)/dVar1);
+var1box = var1box+1*(data1==var1min);
 
-kebox = ceil((data2-kemin)/dke);
-kebox = kebox+1*(data2==kemin);
+var2box = ceil((data2-var2min)/dVar2);
+var2box = var2box+1*(data2==var2min);
 
-% brutally inefficient but will work for 2D
+% brutally inefficient but will work for 2D (less inefficient than it used to be)
 % double loop
 for i = 1:Nx
     for jj = 1:Nz
         % update the corect box's total with the current area value
-        myhist(sbox(i, jj),kebox(i, jj)) = myhist(sbox(i, jj), kebox(i, jj))+1*arcphys(i,jj);
+        myhist(var1box(i, jj),var2box(i, jj)) = myhist(var1box(i, jj), var2box(i, jj))+1*arcphys(i,jj);
     end
 end
 qsp = myhist'/totar;
@@ -204,7 +217,7 @@ if isSanityCheck % These are the upper plots of the variables in physical space
     else
         colormap(gca, cmocean('amp'))
     end
-    caxis([kemin kemax]);
+    caxis([var1min var2max]);
     c = colorbar('Location','EastOutside');
     ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
     hold on;
@@ -231,30 +244,30 @@ xticklabels([]);
 colormap(gca, plasma);
 caxis([-6 -2]);
 c = colorbar; ylabel(c, 'Volume');
-axis tight;
+axis([var1min var1max var2min var2max]);
 box on
 ax4.Position = ax4.Position;
 
 % 1D Histogram for variable 2
 axes(ax3)
 plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
-axis tight;
+ylim([var2min var2max])
 xlim([0 .15]);
 ylabel(var2);
-ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];
+ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
 xticklabels([]);
 
 % 1D Histogram for variable 1
 axes(ax5)
 plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
-axis tight;
+xlim([var1min var1max])
 ylim([0 .15]);
 xlabel(var1);
-ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)];
+ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
 yticklabels([]);
 
 if nargout > 3
-    var_lims = [kemin kemax];
+    var_lims = [var2min var2max var1min var1max];
 end
 
 figure_print_format(gcf);

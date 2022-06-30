@@ -4,7 +4,7 @@
 
 QSP, or joint probability plots tell us where two variables overlap, so we can find out if, when and where we get combinations of two variables. 
 
-QSP is a statistical method (it's Baysean P(A|B) ) of analysing a physical domain by decomposing into a 2-dimensional paired histogram of two fluid properties. In this case, one property is usually a physical property of the fluid (density, temperature, salinity, tracer concentration), and the other a measure of flow (speed, Kinetic Energy, vorticity, enstrophy, dissipation). 
+QSP is a statistical method (it's Baysean P(A|B)) of analysing a physical domain by decomposing into a 2-dimensional paired histogram of two fluid properties. In this case, one property is usually a physical property of the fluid (density, temperature, salinity, tracer concentration), and the other a measure of flow (speed, Kinetic Energy, vorticity, enstrophy, dissipation). 
 
 Typically, the sorting algorithm can be used to investigate mixing, telling how much of each type of energy there is at each timestep, and how energy moves between those types (see [plot\_diagnos.m](https://github.com/ddeepwel/SPINSmatlab/blob/master/plotting/plot_diagnos.m) in SPINSmatlab). Unlike other methods typically used to investigate mixing, it is primarily qualitative, but it informs us where mixing takes place, and the fluid parcels that have undergone mixing, as well as the fact we can change the physical domain of interest easily (which we can't do for a sorting algorithm). 
 

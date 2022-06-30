@@ -1,6 +1,7 @@
 function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims, var_lims)
-%QSP_MAPPED - One line description of what the function or script performs (H1 line)
-%Optional file header info (to give more details about the function than in the H1 line)
+%QSP_MAPPED - produces QSP, or joint probability plots to tell us where two
+%variables overlap, so we can find out if, when and where we get
+%combinations of two variables.
 %
 % Syntax:  [qsp, myVar1, myke, ke_lims] = qsp_mapped(ii, var1, xlims, var2_lims)
 %
@@ -105,7 +106,7 @@ switch lower(var2)
         data2 = sqrt(u.^2 + w.^2);
     otherwise
         try
-            data1 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
+            data2 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
         catch
             error([var2, ' not configured']);
         end
