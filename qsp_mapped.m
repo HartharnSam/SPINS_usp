@@ -76,8 +76,6 @@ switch lower(var1)
     case 's'
         data1 = spins_reader_new('s',ii, xmin_ind:xmax_ind, []);
         data1 = data1.*(data1>0);
-    case 'rho'
-        data1 = spins_reader_new('rho', ii, xmin_ind:xmax_ind, []);
     otherwise
         try
             data1 = spins_reader_new(var1, ii, xmin_ind:xmax_ind, []);
@@ -137,7 +135,7 @@ arcphysv = arcphys(:);
 totar = sum(arcphysv);
 
 %% Sort data into the histogram "boxes"
-numpts = 50;
+numpts = 20;
 % for variable on x
 if nargin > 4 && numel(var_lims) == 4
     var1min = var_lims(3); var1max = var_lims(4);
@@ -217,13 +215,14 @@ if isSanityCheck % These are the upper plots of the variables in physical space
     else
         colormap(gca, cmocean('amp'))
     end
-    caxis([var1min var2max]);
+    caxis([var2min var2max]);
     c = colorbar('Location','EastOutside');
     ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
     hold on;
     plot(x(:, 1), z(:, 1), 'k-');
     axis([xlims zlims])
-    
+    ax2.Position(3) = ax1.Position(3);
+
 else
     tiledlayout(2, 1);
 end

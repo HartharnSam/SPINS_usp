@@ -1,17 +1,18 @@
-function qsp_to_physical(ii, var1, var2, phys_lims, var_lims)
+function qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %QSP_TO_PHYSICAL - Relate region of qsp graph to physical space.
 % Can be used interactively by clicking a region, or by setting it in the
 % code
 %
-% Syntax:  qsp_to_physical(ii, var1, var2, phys_lims, var_lims)
+% Syntax:  qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
 %    var1 - variable to compare to var2 (on x axis)
 %    var2 - Variable to compare to var1 (on y axis)
-%    phys_lims - [optional] Region of physical space [xmin xmax zmin zmax], can only
-%    specify the x limits. Defaults to full size of tank
-%    var_lims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
+%    spat_lims - [optional] Spatial Region of physical space [xmin xmax zmin zmax]
+%       optionally, only set the x limits. Defaults to full size of tank
+%    var_lims - [optional] realistic limits of the variables to investigate as [var2min var2max var1min var2max]
+%    Region - [optional] QSP Region of interest to display data for
 %
 % Other m-files required: qsp_mapped, spins_params, xgrid_reader,
 % zgrid_reader, spins_reader_new, nearest_index, cmocean, plasma,
@@ -36,33 +37,34 @@ isInvert = false;
 params = spins_params;
 if nargin<4
     xlims = [params.min_x params.min_x+params.Lx];
-    phys_lims = xlims;
+    spat_lims = xlims;
 else
-    xlims = phys_lims([1 2]);
+    xlims = spat_lims([1 2]);
 end
-if nargin >=4 && numel(phys_lims) == 4
-    zlims = phys_lims([3 4]);
+if nargin >=4 && numel(spat_lims) == 4
+    zlims = spat_lims([3 4]);
 else
     zlims = [params.min_z params.min_z+params.Lz];
-    phys_lims([3 4]) = zlims;
+    spat_lims([3 4]) = zlims;
 end
 
 if nargin>4
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, phys_lims, var_lims);
+    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, spat_lims, var_lims);
 else
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, phys_lims);
+    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, spat_lims);
 end
 
 %% Set region of interest
-% Uncomment to set the region of interest manually
-%var1_lim = [0.004 .008];
-%var2_lim = [0.0025 0.005];
+if nargin > 5
+    var1_ROI = Region([1 2]);
+    var2_ROI = Region([3 4]);
+else
 
-% Uncomment to set the region of interest interactively
-disp('Click the corners on the QSP plot to select your region of interest')
-[var1_lim, var2_lim] = ginput(2);
-var1_lim = sort(var1_lim); var2_lim = sort(var2_lim); % Sorting means the clicking can be in any order
-
+    % Uncomment to set the region of interest interactively
+    disp('Click the corners on the QSP plot to select your region of interest')
+    [var1_ROI, var2_ROI] = ginput(2);
+    var1_ROI = sort(var1_ROI); var2_ROI = sort(var2_ROI); % Sorting means the clicking can be in any order
+end
 %% Load in physical data
 % read in the grids & cut down
 x = xgrid_reader();
@@ -108,7 +110,7 @@ switch lower(var2)
         w = spins_reader_new('w',ii, xmin_ind:xmax_ind, []);
         data2 = sqrt(u.^2 + w.^2);
     otherwise
-        try 
+        try
             data2 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
         catch
             error([var2, ' not configured']);
@@ -116,24 +118,33 @@ switch lower(var2)
 end
 
 %% Extract QSP region of interest from physical data
-RegOfInterest = (~((data1 >= var1_lim(1)) & (data1 =< var1_lim(2)) & (data2 >= var2_lim(1))...
-    & (data2 =< var2_lim(2))));
+RegOfInterest = (~((data1 >= var1_ROI(1)) & (data1 <= var1_ROI(2)) & (data2 >= var2_ROI(1))...
+    & (data2 <= var2_ROI(2))));
 if isInvert
-    data1(~RegOfInterest) = NaN;
-    data2(~RegOfInterest) = NaN;
-else
-    data1(RegOfInterest) = NaN;
-    data2(RegOfInterest) = NaN;
+    RegOfInterest = ~RegOfInterest;
 end
+data1(RegOfInterest) = NaN;
+data2(RegOfInterest) = NaN;
+
 
 %% Plot it up
 % These are the upper plots of the variables in physical space
-figure(2)
-ax1 = subplot(3, 1, 1);
+% Copy over from the figure made by QSP_mapped
+hf1 = gcf;
+hf2 = figure(2);
+hf2.Position = hf1.Position;
+ch = get(hf1, 'children');
+nh = copyobj(ch, hf2);
+
+ax1 = hf2.Children(end);
+ax2 = hf2.Children(end-2);
+ax3 = hf2.Children(end-3);
+axes(ax1)
+hold off
 pcolor(ax1, x, z, data1); shading flat;
 title(['t = ', num2str(ii)]);
 colormap(gca, cmocean('dense'));
-caxis(var1_lim);
+caxis(var1_ROI);
 c = colorbar('location', 'EastOutside');
 ylabel(c, var1); ylabel('z (m)');
 axis([xlims zlims])
@@ -141,34 +152,27 @@ xticklabels([]);
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 
-ax2 = subplot(3, 1, 2);
+axes(ax2);
+hold off
 pcolor(ax2, x, z, data2); shading flat;
 if strcmpi(var2, 'vorty')
     colormap(gca, cmocean('balance'));
 else
     colormap(gca, cmocean('amp'))
 end
-caxis(var2_lim);
+caxis(var2_ROI);
 c = colorbar('Location', 'EastOutside');
 ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 axis([xlims zlims])
+ax2.Position(3) = ax1.Position(3);
 
-% Plot the QSP part
-ax3 = subplot(3, 1, 3);
-pcolor(myVar1, myKE, log10(qsp));
-shading flat;
-colormap(gca, plasma);
-caxis([-6 -2]);
-c = colorbar; ylabel(c, 'Volume');
-axis([var_lims(3) var_lims(4) var_lims(1) var_lims(2)]);
-axis square;
-box on
+% Plot the QSP Region of Interest
+axes(ax3);
 hold on
-rectangle('Position', [var1_lim(1) var2_lim(1) diff(var1_lim) diff(var2_lim)],...
+rectangle('Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI)],...
     'EdgeColor', 'w');
-xlabel(var1); ylabel(var2);
 
 %% Finish off the plot by formatting it all
 figure_print_format;
