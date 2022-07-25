@@ -78,6 +78,9 @@ switch lower(var2)
 
         data2 = 0.5.*(u.^2 + w.^2 + v.^2);
         clear u w;
+    case 'ke_v'
+        v = spins_reader_new('v', ii, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        data2 = 0.5.*v.^2;
 end
 
 %% Calculate some statistics

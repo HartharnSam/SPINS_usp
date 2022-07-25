@@ -1,4 +1,4 @@
-function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims, var_lims)
+function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, spat_lims, var_lims)
 %QSP_MAPPED - produces QSP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables.
@@ -9,7 +9,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims,
 %    ii - Simulation timestep to output for
 %    var1 - variable to compare to var2 (on x axis)
 %    var2 - Variable to compare to var1 (on y axis)
-%    phys_lims - [optional] Region of physical space [xmin xmax zmin zmax], can only
+%    spat_lims - [optional] Spatial Region of physical space [xmin xmax zmin zmax]
 %    specify the x limits. Defaults to full size of tank
 %    var_lims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
 %
@@ -43,18 +43,16 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, phys_lims,
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-
-close all;
-
+figure;
 % read in the grids & cut down to size
 params = spins_params;
 if nargin<4
     xlims = [params.min_x params.min_x+params.Lx];
 else
-    xlims = phys_lims([1 2]);
+    xlims = spat_lims([1 2]);
 end
-if nargin >=4 && numel(phys_lims) == 4
-    zlims = phys_lims([3 4]);
+if nargin >=4 && numel(spat_lims) == 4
+    zlims = spat_lims([3 4]);
 else
     zlims = [params.min_z params.min_z+params.Lz];
 end
@@ -76,12 +74,19 @@ switch lower(var1)
     case 's'
         data1 = spins_reader_new('s',ii, xmin_ind:xmax_ind, []);
         data1 = data1.*(data1>0);
+    case 'enstrophy'
+        try
+            data1 = spins_reader_new('enstrophy', ii, xmin_ind:xmax_ind, []);
+        catch
+            data1 = 0.5*spins_reader_new('vorty', ii, xmin_ind:xmax_ind, []).^2;
+        end
     otherwise
         try
             data1 = spins_reader_new(var1, ii, xmin_ind:xmax_ind, []);
         catch
             error([var1, ' not configured']);
         end
+    
 end
 
 switch lower(var2)
@@ -135,7 +140,7 @@ arcphysv = arcphys(:);
 totar = sum(arcphysv);
 
 %% Sort data into the histogram "boxes"
-numpts = 20;
+numpts = 50;
 % for variable on x
 if nargin > 4 && numel(var_lims) == 4
     var1min = var_lims(3); var1max = var_lims(4);
@@ -222,9 +227,6 @@ if isSanityCheck % These are the upper plots of the variables in physical space
     plot(x(:, 1), z(:, 1), 'k-');
     axis([xlims zlims])
     ax2.Position(3) = ax1.Position(3);
-
-else
-    tiledlayout(2, 1);
 end
 
 % Change the figure aspect ratio to taller
@@ -236,7 +238,7 @@ ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
 
 % Plot the 2d QSP histogram
 axes(ax4)
-pcolor(ax4, myVar1, myVar2, log10(qsp));
+imagesc(ax4, myVar1, myVar2, log10(qsp)); set(ax4, 'YDir', 'normal')
 shading flat
 yticklabels([]);
 xticklabels([]);

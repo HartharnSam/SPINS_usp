@@ -36,7 +36,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var
 % 14-Jun-2022; Last revision: 20-Jun-2022
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 
-close all; 
+clf
 % Read in the grids & cut down size as required
 params = spins_params;
 if nargin < 4
@@ -77,16 +77,22 @@ switch var1
         data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
         data1 = data1.*(data1>0);
     case 'rho'
-        try 
+        try
             data1 = spins_reader_new('rho', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
         catch
             rho0 = params.rho_0;
             data1 = (eqn_of_state(spins_reader_new('t', ti, xmin_ind:xmax_ind,...
-                    ymin_ind:ymax_ind, zmin_ind:zmax_ind)));
+                ymin_ind:ymax_ind, zmin_ind:zmax_ind)));
+        end
+    case 'enstrophy'
+        try
+            data1 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        catch
+            data1 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind).^2;
         end
     otherwise
         data1 = spins_reader_new(var1, ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-
+        
 end
 
 switch lower(var2)
@@ -94,11 +100,27 @@ switch lower(var2)
         u = spins_reader_new('u', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
         v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
         w = spins_reader_new('w', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-
+        
         data2 = 0.5.*(u.^2 + w.^2 + v.^2);
         clear u v w;
+    case 'ke_v'
+        v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        data2 = 0.5.*(v.^2);
+        clear v;
+    case 'speed'
+        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        
+        data2 = sqrt(u.^2 + w.^2 + v.^2);
+        clear u v w;
+    case 'diss'
+        data2 = log10(spins_reader_new('diss', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind));
+        
+    otherwise
+        data2 = spins_reader_new(var2, ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        % TODO: Add in vorticities, enstrophy?
 end
-% TODO: Add in vorticities, enstrophy, dissipation, speed and wildcard
 
 %%Sort the data into the histogram boxes
 numpts = 50;
@@ -147,57 +169,58 @@ for ii = 1:Nx
 end
 
 qsp = myhist'; %TODO; weight by total area
-
-figure(1)
-ax1 = subaxis(4, 1, 1, 'MT', 0.04);
-pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
-title(['t = ', num2str(ti*params.plot_interval)]);
-colormap(gca, cmocean('dense'));
-caxis([var1min var1max]);
-c = colorbar('Location', 'EastOutside');
-ylabel(c, var1); ylabel('z (m)');
-axis([xlims zlims])
-
-ax2 = subaxis(4, 1, 2, 'MT', 0.04);
-pcolor(xv, zv, squeeze(data2(:, 1, :))); shading flat;
-colormap(gca, cmocean('amp'))
-caxis([var2min var2max]);
-c = colorbar('Location', 'EastOutside');
-ylabel(c, var2); ylabel('z (m)');
-axis([xlims zlims])
-
-ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04);
-ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04);
-ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
-
-% plot 2D QSP histogram
-axes(ax4)
-pcolor(ax4, myVar1, myVar2, log10(qsp)); shading flat; 
-yticklabels([]); xticklabels([]);
-colormap(gca, plasma);
-%caxis([-6 -2]);
-c = colorbar; ylabel(c, 'Volume')
-axis([var1min var1max var2min var2max]);
-box on
-ax4.Position = ax4.Position;
-
-axes(ax3)
-plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
-ylim([var2min var2max])
-xlim([0 .15]);
-ylabel(var2);
-ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
-xticklabels([]);
-
-% 1D Histogram for variable 1
-axes(ax5)
-plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
-xlim([var1min var1max])
-ylim([0 .15]);
-xlabel(var1);
-ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
-yticklabels([]);
-
+isPlot = true; % speeds up processing with no graphical outputs needed
+if isPlot
+    figure(1)
+    ax1 = subaxis(4, 1, 1, 'MT', 0.04);
+    pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
+    title(['t = ', num2str(ti*params.plot_interval)]);
+    colormap(gca, cmocean('dense'));
+    caxis([var1min var1max]);
+    c = colorbar('Location', 'EastOutside');
+    ylabel(c, var1); ylabel('z (m)');
+    axis([xlims zlims])
+    
+    ax2 = subaxis(4, 1, 2, 'MT', 0.04);
+    pcolor(xv, zv, squeeze(data2(:, 1, :))); shading flat;
+    colormap(gca, cmocean('amp'))
+    caxis([var2min var2max]);
+    c = colorbar('Location', 'EastOutside');
+    ylabel(c, var2); ylabel('z (m)');
+    axis([xlims zlims])
+    
+    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04);
+    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04);
+    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
+    
+    % plot 2D QSP histogram
+    axes(ax4)
+    imagesc(ax4, myVar1, myVar2, log10(qsp)); shading flat; set(gca, 'YDir', 'normal')
+    yticklabels([]); xticklabels([]);
+    colormap(gca, plasma);
+    %caxis([-6 -2]);
+    c = colorbar; ylabel(c, 'Volume')
+    axis([var1min var1max var2min var2max]);
+    box on
+    ax4.Position = ax4.Position;
+    
+    axes(ax3)
+    plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
+    ylim([var2min var2max])
+    xlim([0 .15]);
+    ylabel(var2);
+    ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
+    xticklabels([]);
+    
+    % 1D Histogram for variable 1
+    axes(ax5)
+    plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
+    xlim([var1min var1max])
+    ylim([0 .15]);
+    xlabel(var1);
+    ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
+    yticklabels([]);
+end
 if nargout > 3
     var_lims = [var2min var2max var1min var1max];
 end

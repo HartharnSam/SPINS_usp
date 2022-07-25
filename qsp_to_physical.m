@@ -25,7 +25,7 @@ function qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 % GitHub: https://github.com/HartharnSam
 % 17-Jun-2022; Last revision: 17-Jun-2022
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
-
+%
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
@@ -49,9 +49,9 @@ else
 end
 
 if nargin>4
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, spat_lims, var_lims);
+    qsp_mapped(ii, var1, var2, spat_lims, var_lims);
 else
-    [qsp, myVar1, myKE, var_lims] = qsp_mapped(ii, var1, var2, spat_lims);
+    qsp_mapped(ii, var1, var2, spat_lims);
 end
 
 %% Set region of interest
@@ -134,11 +134,16 @@ hf1 = gcf;
 hf2 = figure(2);
 hf2.Position = hf1.Position;
 ch = get(hf1, 'children');
-nh = copyobj(ch, hf2);
+copyobj(ch, hf2);
+%%
+aces = findobj(hf2,'Type','Axes');
+[~, aces]=sort_axes(aces);
+%%
+ax1 = aces(1);
+ax2 = aces(2);
+ax3 = aces(4);
 
-ax1 = hf2.Children(end);
-ax2 = hf2.Children(end-2);
-ax3 = hf2.Children(end-3);
+% Replace the variable 1 plot with the ROI plots
 axes(ax1)
 hold off
 pcolor(ax1, x, z, data1); shading flat;
@@ -152,6 +157,7 @@ xticklabels([]);
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 
+% Replace the variable 2 plot with the ROI plots 
 axes(ax2);
 hold off
 pcolor(ax2, x, z, data2); shading flat;
@@ -171,8 +177,25 @@ ax2.Position(3) = ax1.Position(3);
 % Plot the QSP Region of Interest
 axes(ax3);
 hold on
-rectangle('Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI)],...
+rectangle(ax3, 'Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI)],...
     'EdgeColor', 'w');
 
 %% Finish off the plot by formatting it all
 figure_print_format;
+
+end
+
+function [sorted_positions, sorted_axes]=sort_axes(array_of_axes)
+% SORT_AXES sorts the axis from top-left to bottom-right.
+    % [POSITIONS,AXES] = sort_axes(array_of_axes) Takes in an array of subplot axes
+    % and sorts them from top-left to bottom right according to their position.
+    % This returns POSITIONS which is a matrix that contains the position
+    % vectors of the sorted axes. AXES is the array of sorted axes.
+num_axes=length(array_of_axes);
+positions=zeros(num_axes,4);
+for ii=1:num_axes
+    positions(ii,:)=array_of_axes(ii).Position;
+end
+[sorted_positions,sort_index]=sortrows(positions,[-2 1]);
+sorted_axes=array_of_axes(sort_index);
+end
