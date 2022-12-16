@@ -43,7 +43,8 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, spat_lims,
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-figure;
+%figure;
+clf;
 % read in the grids & cut down to size
 params = spins_params;
 if nargin<4
@@ -201,7 +202,7 @@ qsp = myhist'/totar;
 isSanityCheck = true;
 if isSanityCheck % These are the upper plots of the variables in physical space
     figure(1)
-    ax1 = subaxis(4, 1, 1, 'MT', .04);    
+    ax1 = subaxis(4, 1, 1, 'MT', .05);    
     pcolor(x, z, data1), shading flat;
     title(['t = ', num2str(ii)]);
     colormap(gca, cmocean('dense'));

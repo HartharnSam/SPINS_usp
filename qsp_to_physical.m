@@ -29,7 +29,7 @@ function qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-
+close all;
 % Option to invert the selected region (show outside the rectangle)
 isInvert = false;
 %% Load in data
