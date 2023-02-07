@@ -36,15 +36,14 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, spat_lims,
 % 14-Jun-2022; Last revision: 20-Jun-2022
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 
-% Dev notes: 
+% Dev notes:
 % - I think this won't work for anything that isn't FOURIER in x, cheb in
 % z. Relatively minor changes needed if they are simply the other way
-% around, more if they are both fourier? 
+% around, more if they are both fourier?
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
 %figure;
-clf;
 % read in the grids & cut down to size
 params = spins_params;
 if nargin<4
@@ -87,7 +86,7 @@ switch lower(var1)
         catch
             error([var1, ' not configured']);
         end
-    
+
 end
 
 switch lower(var2)
@@ -199,77 +198,82 @@ end
 qsp = myhist'/totar;
 
 %% Plot up
-isSanityCheck = true;
-if isSanityCheck % These are the upper plots of the variables in physical space
-    figure(1)
-    ax1 = subaxis(4, 1, 1, 'MT', .05);    
-    pcolor(x, z, data1), shading flat;
-    title(['t = ', num2str(ii)]);
-    colormap(gca, cmocean('dense'));
-    caxis([var1min var1max]);
-    c = colorbar('Location','EastOutside');
-    ylabel(c, var1); ylabel('z (m)');
-    axis([xlims zlims])
-    xticklabels([]);
-    hold on;
-    plot(x(:, 1), z(:, 1), 'k-');
+isPlot = false;
+if isPlot
+    clf;
 
-    ax2 = subaxis(4, 1, 2, 'MT', 0.04);
-    pcolor(x,z,data2), shading flat;
-    if strcmpi(var2, 'vorty')
-        colormap(gca, cmocean('balance'));
-    else
-        colormap(gca, cmocean('amp'))
+    isSanityCheck = true;
+    if isSanityCheck % These are the upper plots of the variables in physical space
+        figure(1)
+        ax1 = subaxis(4, 1, 1, 'MT', .05);
+        pcolor(x, z, data1), shading flat;
+        title(['t = ', num2str(ii)]);
+        colormap(gca, cmocean('dense'));
+        caxis([var1min var1max]);
+        c = colorbar('Location','EastOutside');
+        ylabel(c, var1); ylabel('z (m)');
+        axis([xlims zlims])
+        xticklabels([]);
+        hold on;
+        plot(x(:, 1), z(:, 1), 'k-');
+
+        ax2 = subaxis(4, 1, 2, 'MT', 0.04);
+        pcolor(x,z,data2), shading flat;
+        if strcmpi(var2, 'vorty')
+            colormap(gca, cmocean('balance'));
+        else
+            colormap(gca, cmocean('amp'))
+        end
+        caxis([var2min var2max]);
+        c = colorbar('Location','EastOutside');
+        ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
+        hold on;
+        plot(x(:, 1), z(:, 1), 'k-');
+        axis([xlims zlims])
+        ax2.Position(3) = ax1.Position(3);
     end
-    caxis([var2min var2max]);
-    c = colorbar('Location','EastOutside');
-    ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
-    hold on;
-    plot(x(:, 1), z(:, 1), 'k-');
-    axis([xlims zlims])
-    ax2.Position(3) = ax1.Position(3);
+
+    % Change the figure aspect ratio to taller
+    fig = gcf; fig.Position([3 4]) = [643.2000 531.2000];
+
+    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04);
+    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04);
+    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
+
+    % Plot the 2d QSP histogram
+    axes(ax4)
+    imagesc(ax4, myVar1, myVar2, log10(qsp)); set(ax4, 'YDir', 'normal')
+    shading flat
+    yticklabels([]);
+    xticklabels([]);
+    colormap(gca, plasma);
+    caxis([-6 -2]);
+    c = colorbar; ylabel(c, 'Volume');
+    axis([var1min var1max var2min var2max]);
+    box on
+    ax4.Position = ax4.Position;
+
+    % 1D Histogram for variable 2
+    axes(ax3)
+    plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
+    ylim([var2min var2max])
+    xlim([0 .15]);
+    ylabel(var2);
+    ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
+    xticklabels([]);
+
+    % 1D Histogram for variable 1
+    axes(ax5)
+    plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
+    xlim([var1min var1max])
+    ylim([0 .15]);
+    xlabel(var1);
+    ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
+    yticklabels([]);
+    figure_print_format(gcf);
+
 end
-
-% Change the figure aspect ratio to taller
-fig = gcf; fig.Position([3 4]) = [643.2000 531.2000];
-
-ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04);
-ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04);
-ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
-
-% Plot the 2d QSP histogram
-axes(ax4)
-imagesc(ax4, myVar1, myVar2, log10(qsp)); set(ax4, 'YDir', 'normal')
-shading flat
-yticklabels([]);
-xticklabels([]);
-colormap(gca, plasma);
-caxis([-6 -2]);
-c = colorbar; ylabel(c, 'Volume');
-axis([var1min var1max var2min var2max]);
-box on
-ax4.Position = ax4.Position;
-
-% 1D Histogram for variable 2
-axes(ax3)
-plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
-ylim([var2min var2max])
-xlim([0 .15]);
-ylabel(var2);
-ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
-xticklabels([]);
-
-% 1D Histogram for variable 1
-axes(ax5)
-plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
-xlim([var1min var1max])
-ylim([0 .15]);
-xlabel(var1);
-ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
-yticklabels([]);
-
 if nargout > 3
     var_lims = [var2min var2max var1min var1max];
 end
 
-figure_print_format(gcf);

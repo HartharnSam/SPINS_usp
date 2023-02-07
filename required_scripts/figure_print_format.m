@@ -77,6 +77,7 @@ if ~isempty(cbar)
     for ii = 1:length(cbar)
         cbar(ii).TickLabelInterpreter = 'Latex';
         cbar(ii).Label.Interpreter = 'Latex';
+        cbar(ii).Ruler.Exponent = 0;
     end
 end
 
