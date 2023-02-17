@@ -46,7 +46,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var
 %figure;
 % read in the grids & cut down to size
 params = spins_params;
-if nargin < 4
+if nargin < 4 || isempty(spat_lims)
     xlims = [params.min_x params.min_x+params.Lx];
 else
     xlims = spat_lims([1 2]);
@@ -183,7 +183,7 @@ if strcmpi(params.mapped_grid, 'true')
 %% Compute the area
 % Compute the area associated with each Chebyshev point using the values
 % halfway between the point below and above
-z = zgrid_reader;
+zi = zgrid_reader;
 [~, z1dc] = cheb(Nzc);
 
 % first do it on the standard interval
@@ -195,7 +195,7 @@ arc(Nzc+1) = arc(1);
 arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
 
 % now for each x point, stretch or shrink according to the local depth
-Lznow = max(z, [], 2) - min(z, [], 2);
+Lznow = max(zi, [], 2) - min(zi, [], 2);
 arcphys = arc.*Lznow;
 
 % Remove values that correspond to missing z values

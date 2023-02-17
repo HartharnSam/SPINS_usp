@@ -52,7 +52,7 @@ if nargin <= 4
     var_lims = [];
 end
 
-qsp_mapped(ii, var1, var2, spat_lims, var_lims);
+[~, myVar1, myVar2] = qsp_mapped(ii, var1, var2, spat_lims, var_lims);
 
 
 %% Set region of interest
@@ -63,8 +63,15 @@ else
 
     % Uncomment to set the region of interest interactively
     disp('Click the corners on the QSP plot to select your region of interest')
+    %isPolygon = true
+    %if ~isPolygon
     [var1_ROI, var2_ROI] = ginput(2);
     var1_ROI = sort(var1_ROI); var2_ROI = sort(var2_ROI); % Sorting means the clicking can be in any order
+    %else
+    %    disp('Press return to end')
+    %    [var1_ROI, var2_ROI] = ginput;
+    %end
+
 end
 %% Load in physical data
 % read in the grids & cut down
@@ -121,9 +128,11 @@ end
 %% Extract QSP region of interest from physical data
 RegOfInterest = (~((data1 >= var1_ROI(1)) & (data1 <= var1_ROI(2)) & (data2 >= var2_ROI(1))...
     & (data2 <= var2_ROI(2))));
+
 if isInvert
     RegOfInterest = ~RegOfInterest;
 end
+
 data1(RegOfInterest) = NaN;
 data2(RegOfInterest) = NaN;
 
@@ -158,7 +167,7 @@ xticklabels([]);
 hold on;
 plot(x(:, 1), z(:, 1), 'k-');
 
-% Replace the variable 2 plot with the ROI plots 
+% Replace the variable 2 plot with the ROI plots
 axes(ax2);
 hold off
 pcolor(ax2, x, z, data2); shading flat;
@@ -188,10 +197,10 @@ end
 
 function [sorted_positions, sorted_axes]=sort_axes(array_of_axes)
 % SORT_AXES sorts the axis from top-left to bottom-right.
-    % [POSITIONS,AXES] = sort_axes(array_of_axes) Takes in an array of subplot axes
-    % and sorts them from top-left to bottom right according to their position.
-    % This returns POSITIONS which is a matrix that contains the position
-    % vectors of the sorted axes. AXES is the array of sorted axes.
+% [POSITIONS,AXES] = sort_axes(array_of_axes) Takes in an array of subplot axes
+% and sorts them from top-left to bottom right according to their position.
+% This returns POSITIONS which is a matrix that contains the position
+% vectors of the sorted axes. AXES is the array of sorted axes.
 num_axes=length(array_of_axes);
 positions=zeros(num_axes,4);
 for ii=1:num_axes

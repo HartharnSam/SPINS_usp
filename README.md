@@ -11,21 +11,25 @@ Typically, the sorting algorithm can be used to investigate mixing, telling how 
 ## Research questions available using this method
 - Tracing how fluid parcels change as they move through physical space
 - Tagging of fluid parcels - we can map back from QSP to physical space
+- Understanding covariance of fluid properties
 
 ## Tools provided:
-- [QSP\_mapped](qsp_mapped.m) - MATLAB tool for calculating the QSP histograms (easy to adjust parameters and run local analysis)
+- [QSP\_2d](qsp_2d.m) - MATLAB tool for calculating the QSP histograms for 2D simulations, mapped or unmapped grids (easy to adjust parameters and run local analysis)
+- [QSP\_3d](qsp_3d.m) - MATLAB tool for doing this in 3D simulations too.  
 - [QSP\_to\_physical](qsp_to_physical.m) - MATLAB tool to identify what fluid in physical space meets the criteria identified from a QSP histogram. 
-- \*SPINS qsp (best for large simulations or 3D)
-- \*SPINS qsp read tool
+- \*[SPINS qsp](https://git.uwaterloo.ca/SPINS/SPINS_main/-/tree/master/src/cases/qsp) - A c++ tool for calculating QSP within the SPINS architecture. Best if using large outputs, and/or 3D simulations. 
+- \*SPINS qsp read tool - Tool to read the .csv output by the SPINS qsp
 - \*MATLAB Statistics tool. 
 \* under development/not included here
 
 MATLAB files are set up to use as variable 1, density, salinity, or any other SPINS direct output file. As variable 2, it can do KE, speed, enstrophy, vorticity, dissipation, or any other SPINS direct output file. 
 
-### Usage of tools
-Both QSP\_mapped and QSP\_to\_physical have the same input variables, ii is the output number, var1 is the first variable, var2 second variable, xlims is the x region to plot, and ke_lims is the limits of the second variable. %TODO: Flag to sort out both xlims and ke\_lims to work on two both axes - 2x2 matrix kind of thing.
+TODO: qsp\_to\_physical to work with teh csv read in from SPINSqsp
 
-QSP\to\_physical will then present to you the output from QSP\_mapped (it in fact simply calls that function), prompting you to select the space in the QSP histogram (by clicking two opposite corners of the rectangle). The interactive functionality can be switched off and replaced by fixed values by switching around some commented lines. 
+### Usage of tools
+Both QSP\_mapped and QSP\_to\_physical have the same input variables, ii is the output number, var1 is the first variable, var2 second variable, xlims is the x region to plot, and ke\_lims is the limits of the second variable. 
+
+QSP\_to\_physical will then present to you the output from QSP\_mapped (it in fact simply calls that function), prompting you to select the space in the QSP histogram (by clicking two opposite corners of the rectangle). The interactive functionality can be switched off and replaced by fixed values by switching around some commented lines. 
 
 There's also an "isInvert" switch in qsp\_to\_physical which needs to be manually changed in the code, if it's set to true it shows us the physical space which is outside the highlighted qsp space - in some ways it's "What part of the flow isn't interesting"
 
