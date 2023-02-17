@@ -1,12 +1,12 @@
-function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, spat_lims, var_lims)
-%QSP_MAPPED - produces QSP, or joint probability plots to tell us where two
+function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims)
+%QSP_2D - produces QSP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables.
 %
-% Syntax:  [qsp, myVar1, myke, ke_lims] = qsp_mapped(ii, var1, xlims, var2_lims)
+% Syntax:  [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims)
 %
 % Inputs:
-%    ii - Simulation timestep to output for
+%    ti - Simulation timestep to output for
 %    var1 - variable to compare to var2 (on x axis)
 %    var2 - Variable to compare to var1 (on y axis)
 %    spat_lims - [optional] Spatial Region of physical space [xmin xmax zmin zmax]
@@ -46,7 +46,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_mapped(ii, var1, var2, spat_lims,
 %figure;
 % read in the grids & cut down to size
 params = spins_params;
-if nargin<4
+if nargin < 4
     xlims = [params.min_x params.min_x+params.Lx];
 else
     xlims = spat_lims([1 2]);
@@ -58,11 +58,15 @@ else
 end
 
 x = xgrid_reader();
+z = zgrid_reader();
+
 xmin_ind = nearest_index(x(:, 1), xlims(1));
 xmax_ind = nearest_index(x(:, 1), xlims(2));
-x = x(xmin_ind:xmax_ind, :);
-z = zgrid_reader(xmin_ind:xmax_ind, []);
-z_inds = z < zlims(1) | z > zlims(2);
+zmin_ind = nearest_index(z(1, :), zlims(1));
+zmax_ind = nearest_index(z(1, :), zlims(2));
+
+x = x(xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+z = z(xmin_ind:xmax_ind, zmin_ind:zmax_ind);
 
 % get the size of the grids
 [Nx, Nz] = size(x);
@@ -72,17 +76,25 @@ Nzc = Nz-1;
 % read in data
 switch lower(var1)
     case 's'
-        data1 = spins_reader_new('s',ii, xmin_ind:xmax_ind, []);
+        data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         data1 = data1.*(data1>0);
     case 'enstrophy'
         try
-            data1 = spins_reader_new('enstrophy', ii, xmin_ind:xmax_ind, []);
+            data1 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         catch
-            data1 = 0.5*spins_reader_new('vorty', ii, xmin_ind:xmax_ind, []).^2;
+            data1 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind).^2;
         end
+    case 'rho'
+        try
+            data1 = spins_reader_new('rho', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        catch
+            rho0 = params.rho_0;
+            data1 = (eqn_of_state(spins_reader_new('t', ti, xmin_ind:xmax_ind,...
+                zmin_ind:zmax_ind), 0));
+        end        
     otherwise
         try
-            data1 = spins_reader_new(var1, ii, xmin_ind:xmax_ind, []);
+            data1 = spins_reader_new(var1, ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         catch
             error([var1, ' not configured']);
         end
@@ -91,53 +103,33 @@ end
 
 switch lower(var2)
     case 'ke'
-        u = spins_reader_new('u',ii, xmin_ind:xmax_ind, []); w = spins_reader_new('w',ii, xmin_ind:xmax_ind, []);
-        data2 = 0.5*(u.^2+w.^2);
+        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind); 
+        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        data2 = 0.5*(u.^2 + w.^2);
+        clear u w
     case 'vorty'
-        data2 = spins_reader_new('vorty', ii, xmin_ind:xmax_ind, []);
+        data2 = spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
     case 'enstrophy'
         try
-            data2 = spins_reader_new('enstrophy', ii, xmin_ind:xmax_ind, []);
+            data2 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         catch
-            data2 = 0.5*spins_reader_new('vorty', ii, xmin_ind:xmax_ind, []).^2;
+            data2 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind).^2;
         end
     case 'diss'
-        data2 = spins_reader_new('diss', ii, xmin_ind:xmax_ind, []);
+        data2 = spins_reader_new('diss', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         data2 = log10(data2);
     case 'speed'
-        u = spins_reader_new('u',ii, xmin_ind:xmax_ind, []); w = spins_reader_new('w',ii, xmin_ind:xmax_ind, []);
+        u = spins_reader_new('u',ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind); 
+        w = spins_reader_new('w',ii, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         data2 = sqrt(u.^2 + w.^2);
+        clear u w
     otherwise
         try
-            data2 = spins_reader_new(var2, ii, xmin_ind:xmax_ind, []);
+            data2 = spins_reader_new(var2, ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
         catch
             error([var2, ' not configured']);
         end
 end
-
-%% Compute the area
-% Compute the area associated with each Chebyshev point using the values
-% halfway between the point below and above
-[~, z1dc] = cheb(Nzc);
-
-% first do it on the standard interval
-% the bottom and top most pts get a half grid box
-arc(1) = 0.5*(z1dc(1)-z1dc(2));
-arc(Nzc+1) = arc(1);
-
-% over the interior pts and store the grid boxes
-arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
-
-% now for each x point, stretch or shrink according to the local depth
-Lznow = max(z, [], 2) - min(z, [], 2);
-arcphys = arc.*Lznow;
-
-% Remove values that correspond to missing z values
-arcphys(z_inds) = 0;
-
-% and get a long vector of the areas and the total area
-arcphysv = arcphys(:);
-totar = sum(arcphysv);
 
 %% Sort data into the histogram "boxes"
 numpts = 50;
@@ -164,7 +156,7 @@ dVar1 = ranges/(numpts-1);
 myVar1 = var1min+(0.5:numpts-0.5)*dVar1;
 
 % For variable on y (KE)
-if nargin<=4 % Use defaults
+if nargin <= 4 || isempty(var_lims) % Use defaults
     var2min = min(data2(:));
     var2max = max(data2(:));
 else
@@ -187,6 +179,36 @@ var1box = var1box+1*(data1==var1min);
 var2box = ceil((data2-var2min)/dVar2);
 var2box = var2box+1*(data2==var2min);
 
+if strcmpi(params.mapped_grid, 'true')
+%% Compute the area
+% Compute the area associated with each Chebyshev point using the values
+% halfway between the point below and above
+z = zgrid_reader;
+[~, z1dc] = cheb(Nzc);
+
+% first do it on the standard interval
+% the bottom and top most pts get a half grid box
+arc(1) = 0.5*(z1dc(1)-z1dc(2));
+arc(Nzc+1) = arc(1);
+
+% over the interior pts and store the grid boxes
+arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
+
+% now for each x point, stretch or shrink according to the local depth
+Lznow = max(z, [], 2) - min(z, [], 2);
+arcphys = arc.*Lznow;
+
+% Remove values that correspond to missing z values
+arcphys(~(zmin_ind:zmax_ind)) = 0;
+
+% and get a long vector of the areas and the total area
+arcphysv = arcphys(:);
+totar = sum(arcphysv);
+
+else
+    arcphys = ones(size(x))*(params.Lx/params.Nx)*(params.Lz/params.Nz);
+    totar = sum(arcphys(:));
+end
 % brutally inefficient but will work for 2D (less inefficient than it used to be)
 % double loop
 for i = 1:Nx
@@ -198,7 +220,7 @@ end
 qsp = myhist'/totar;
 
 %% Plot up
-isPlot = false;
+isPlot = true;
 if isPlot
     clf;
 
@@ -207,7 +229,7 @@ if isPlot
         figure(1)
         ax1 = subaxis(4, 1, 1, 'MT', .05);
         pcolor(x, z, data1), shading flat;
-        title(['t = ', num2str(ii)]);
+        title(['t = ', num2str(ti)]);
         colormap(gca, cmocean('dense'));
         caxis([var1min var1max]);
         c = colorbar('Location','EastOutside');

@@ -35,7 +35,7 @@ isInvert = false;
 %% Load in data
 % Compute the qsp data
 params = spins_params;
-if nargin<4
+if nargin<4 || isempty(spat_lims)
     xlims = [params.min_x params.min_x+params.Lx];
     spat_lims = xlims;
 else
@@ -48,11 +48,12 @@ else
     spat_lims([3 4]) = zlims;
 end
 
-if nargin>4
-    qsp_mapped(ii, var1, var2, spat_lims, var_lims);
-else
-    qsp_mapped(ii, var1, var2, spat_lims);
+if nargin <= 4
+    var_lims = [];
 end
+
+qsp_mapped(ii, var1, var2, spat_lims, var_lims);
+
 
 %% Set region of interest
 if nargin > 5

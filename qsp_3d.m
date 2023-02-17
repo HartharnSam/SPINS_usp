@@ -1,15 +1,15 @@
 function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var_lims)
-%QSP_MAPPED - produces QSP, or joint probability plots to tell us where two
+%QSP_3D - produces QSP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
-%combinations of two variables.
+%combinations of two variables. For 3D unmapped simulations
 %
-% Syntax:  [qsp, myVar1, myke, ke_lims] = qsp_mapped(ii, var1, xlims, var2_lims)
+% Syntax:  [qsp, myVar1, myVar2, var_lims] = qsp_3d(ii, var1, var2, phys_lims, var_lims)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
 %    var1 - variable to compare to var2 (on x axis)
 %    var2 - Variable to compare to var1 (on y axis)
-%    phys_lims - [optional] Region of physical space [xmin xmax zmin zmax], can only
+%    phys_lims - [optional] Region of physical space [xmin xmax ymin ymax zmin zmax], can only
 %    specify the x limits. Defaults to full size of tank
 %    var_lims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
 %
