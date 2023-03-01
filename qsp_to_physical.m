@@ -52,7 +52,7 @@ if nargin <= 4
     var_lims = [];
 end
 
-[~, myVar1, myVar2] = qsp_mapped(ii, var1, var2, spat_lims, var_lims);
+[~, myVar1, myVar2] = qsp_2d(ii, var1, var2, spat_lims, var_lims);
 
 
 %% Set region of interest

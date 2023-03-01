@@ -35,7 +35,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var
 % GitHub:
 % 14-Jun-2022; Last revision: 20-Jun-2022
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
-
+%
 % Dev notes:
 % - I think this won't work for anything that isn't FOURIER in x, cheb in
 % z. Relatively minor changes needed if they are simply the other way
