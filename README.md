@@ -8,6 +8,8 @@ QSP is a statistical method (it's Baysean P(A|B)) of analysing a physical domain
 
 Typically, the sorting algorithm can be used to investigate mixing, telling how much of each type of energy there is at each timestep, and how energy moves between those types (see [plot\_diagnos.m](https://github.com/ddeepwel/SPINSmatlab/blob/master/plotting/plot_diagnos.m) in SPINSmatlab). Unlike other methods typically used to investigate mixing, it is primarily qualitative, but it informs us where mixing takes place, and the fluid parcels that have undergone mixing, as well as the fact we can change the physical domain of interest easily (which we can't do for a sorting algorithm). 
 
+![Schematic of QSP](./F1_SchematicQSP.png)
+
 ## Research questions available using this method
 - Tracing how fluid parcels change as they move through physical space
 - Tagging of fluid parcels - we can map back from QSP to physical space
