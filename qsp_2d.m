@@ -62,12 +62,19 @@ z = zgrid_reader();
 
 xmin_ind = nearest_index(x(:, 1), xlims(1));
 xmax_ind = nearest_index(x(:, 1), xlims(2));
-zmin_ind = nearest_index(z(1, :), zlims(1));
-zmax_ind = nearest_index(z(1, :), zlims(2));
+if strcmpi(params.mapped_grid, 'true')
+    z_inds = [];
+    x = x(xmin_ind:xmax_ind, :);
+    z = z(xmin_ind:xmax_ind, :);
 
-x = x(xmin_ind:xmax_ind, zmin_ind:zmax_ind);
-z = z(xmin_ind:xmax_ind, zmin_ind:zmax_ind);
 
+else
+    zmin_ind = nearest_index(z(1, :), zlims(1));
+    zmax_ind = nearest_index(z(1, :), zlims(2));
+    z_inds = zmin_ind:zmax_ind;
+    x = x(xmin_ind:xmax_ind, z_inds);
+    z = z(xmin_ind:xmax_ind, z_inds);
+end
 % get the size of the grids
 [Nx, Nz] = size(x);
 
@@ -76,25 +83,25 @@ Nzc = Nz-1;
 % read in data
 switch lower(var1)
     case 's'
-        data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, z_inds);
         data1 = data1.*(data1>0);
     case 'enstrophy'
         try
-            data1 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+            data1 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, z_inds);
         catch
-            data1 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind).^2;
+            data1 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, z_inds).^2;
         end
     case 'rho'
         try
-            data1 = spins_reader_new('rho', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+            data1 = spins_reader_new('rho', ti, xmin_ind:xmax_ind, z_inds);
         catch
             rho0 = params.rho_0;
             data1 = (eqn_of_state(spins_reader_new('t', ti, xmin_ind:xmax_ind,...
-                zmin_ind:zmax_ind), 0));
-        end        
+                z_inds), 0));
+        end
     otherwise
         try
-            data1 = spins_reader_new(var1, ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+            data1 = spins_reader_new(var1, ti, xmin_ind:xmax_ind, z_inds);
         catch
             error([var1, ' not configured']);
         end
@@ -103,29 +110,29 @@ end
 
 switch lower(var2)
     case 'ke'
-        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind); 
-        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, z_inds);
+        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, z_inds);
         data2 = 0.5*(u.^2 + w.^2);
         clear u w
     case 'vorty'
-        data2 = spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        data2 = spins_reader_new('vorty', ti, xmin_ind:xmax_ind, z_inds);
     case 'enstrophy'
         try
-            data2 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+            data2 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, z_inds);
         catch
-            data2 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind).^2;
+            data2 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, z_inds).^2;
         end
     case 'diss'
-        data2 = spins_reader_new('diss', ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        data2 = spins_reader_new('diss', ti, xmin_ind:xmax_ind, z_inds);
         data2 = log10(data2);
     case 'speed'
-        u = spins_reader_new('u',ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind); 
-        w = spins_reader_new('w',ii, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+        u = spins_reader_new('u',ti, xmin_ind:xmax_ind, z_inds);
+        w = spins_reader_new('w',ii, xmin_ind:xmax_ind, z_inds);
         data2 = sqrt(u.^2 + w.^2);
         clear u w
     otherwise
         try
-            data2 = spins_reader_new(var2, ti, xmin_ind:xmax_ind, zmin_ind:zmax_ind);
+            data2 = spins_reader_new(var2, ti, xmin_ind:xmax_ind, z_inds);
         catch
             error([var2, ' not configured']);
         end
@@ -180,30 +187,30 @@ var2box = ceil((data2-var2min)/dVar2);
 var2box = var2box+1*(data2==var2min);
 
 if strcmpi(params.mapped_grid, 'true')
-%% Compute the area
-% Compute the area associated with each Chebyshev point using the values
-% halfway between the point below and above
-zi = zgrid_reader;
-[~, z1dc] = cheb(Nzc);
+    %% Compute the area
+    % Compute the area associated with each Chebyshev point using the values
+    % halfway between the point below and above
+    zi = zgrid_reader;
+    [~, z1dc] = cheb(Nzc);
 
-% first do it on the standard interval
-% the bottom and top most pts get a half grid box
-arc(1) = 0.5*(z1dc(1)-z1dc(2));
-arc(Nzc+1) = arc(1);
+    % first do it on the standard interval
+    % the bottom and top most pts get a half grid box
+    arc(1) = 0.5*(z1dc(1)-z1dc(2));
+    arc(Nzc+1) = arc(1);
 
-% over the interior pts and store the grid boxes
-arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
+    % over the interior pts and store the grid boxes
+    arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
 
-% now for each x point, stretch or shrink according to the local depth
-Lznow = max(zi, [], 2) - min(zi, [], 2);
-arcphys = arc.*Lznow;
+    % now for each x point, stretch or shrink according to the local depth
+    Lznow = max(zi, [], 2) - min(zi, [], 2);
+    arcphys = arc.*Lznow;
 
-% Remove values that correspond to missing z values
-arcphys(~(zmin_ind:zmax_ind)) = 0;
+    % Remove values that correspond to missing z values
+    arcphys(~(z_inds)) = 0;
 
-% and get a long vector of the areas and the total area
-arcphysv = arcphys(:);
-totar = sum(arcphysv);
+    % and get a long vector of the areas and the total area
+    arcphysv = arcphys(:);
+    totar = sum(arcphysv);
 
 else
     arcphys = ones(size(x))*(params.Lx/params.Nx)*(params.Lz/params.Nz);
@@ -223,44 +230,54 @@ qsp = myhist'/totar;
 isPlot = true;
 if isPlot
     clf;
+    % Change the figure aspect ratio to taller
+    fig = gcf; fig.Position([3 4]) = [643.2000 531.2000];
 
+    %tiledlayout(4, 1, 'TileSpacing', 'compact');
     isSanityCheck = true;
     if isSanityCheck % These are the upper plots of the variables in physical space
         figure(1)
-        ax1 = subaxis(4, 1, 1, 'MT', .05);
+        %ax1 = nexttile;
+        ax1 = subaxis(4, 1, 1, 'MT', .05); % Uncomment if using a version
+        %of matlab without tiledlayouts
         pcolor(x, z, data1), shading flat;
         title(['t = ', num2str(ti)]);
         colormap(gca, cmocean('dense'));
         caxis([var1min var1max]);
-        c = colorbar('Location','EastOutside');
-        ylabel(c, var1); ylabel('z (m)');
+        c1 = colorbar(ax1, 'Location','EastOutside');
+        ylabel(c1, var1); ylabel('z (m)');
         axis([xlims zlims])
         xticklabels([]);
         hold on;
         plot(x(:, 1), z(:, 1), 'k-');
 
-        ax2 = subaxis(4, 1, 2, 'MT', 0.04);
+        %ax1 = nexttile;
+        ax2 = subaxis(4, 1, 2, 'MT', .05); % Uncomment if using a version
+        %of matlab without tiledlayoutsax2 = subaxis(4, 1, 2, 'MT', 0.04);
         pcolor(x,z,data2), shading flat;
+
         if strcmpi(var2, 'vorty')
             colormap(gca, cmocean('balance'));
         else
             colormap(gca, cmocean('amp'))
         end
         caxis([var2min var2max]);
-        c = colorbar('Location','EastOutside');
-        ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
+        c2 = colorbar('Location','EastOutside');
+        ylabel(c2, var2);
+         xlabel('x (m)'); ylabel('z (m)');
+
+        c2.Position(1) = c1.Position(1);
+        ax2.Position(3) = ax1.Position(3);
+
         hold on;
         plot(x(:, 1), z(:, 1), 'k-');
         axis([xlims zlims])
-        ax2.Position(3) = ax1.Position(3);
     end
 
-    % Change the figure aspect ratio to taller
-    fig = gcf; fig.Position([3 4]) = [643.2000 531.2000];
 
-    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04);
-    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04);
-    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04);
+    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04, 'Holdaxis');
+    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04, 'Holdaxis');
+    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04, 'Holdaxis');
 
     % Plot the 2d QSP histogram
     axes(ax4)
