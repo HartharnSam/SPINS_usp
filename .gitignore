@@ -1,5 +1,6 @@
 runscripts/*
 EOF/*
+plot_3d/*
 *.asv
 *.mat
 *.png

@@ -1,4 +1,4 @@
-function qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
+function ROI = qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %QSP_TO_PHYSICAL - Relate region of qsp graph to physical space.
 % Can be used interactively by clicking a region, or by setting it in the
 % code
@@ -52,7 +52,7 @@ if nargin <= 4
     var_lims = [];
 end
 
-[~, myVar1, myVar2] = qsp_2d(ii, var1, var2, spat_lims, var_lims);
+[~, ~, ~] = qsp_2d(ii, var1, var2, spat_lims, var_lims, (nargout==0));
 
 
 %% Set region of interest
@@ -136,7 +136,7 @@ end
 data1(RegOfInterest) = NaN;
 data2(RegOfInterest) = NaN;
 
-
+if nargout == 0
 %% Plot it up
 % These are the upper plots of the variables in physical space
 % Copy over from the figure made by QSP_mapped
@@ -193,6 +193,12 @@ rectangle(ax3, 'Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI
 %% Finish off the plot by formatting it all
 figure_print_format;
 
+%% 
+else
+    ROI.Region = RegOfInterest;
+    ROI.x = x;
+    ROI.z = z;
+end
 end
 
 function [sorted_positions, sorted_axes]=sort_axes(array_of_axes)

@@ -45,5 +45,8 @@ N.B. Note, when we use a square measure you do essentially squash low values tog
 3. Some kind of pre-determined criteria (exceeding a threshold)
 Perhaps may be a bit hand-wavey (we know that super high KE values are probably bs, low KE is boring). 
 
+## TODO:
+- Fix the scaling for densities to be consistent through all scripts
+
 ## References
 Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [https://doi.org/10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)

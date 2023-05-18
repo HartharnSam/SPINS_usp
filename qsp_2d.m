@@ -1,4 +1,4 @@
-function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims)
+function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims, doPlot)
 %QSP_2D - produces QSP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables.
@@ -227,7 +227,11 @@ end
 qsp = myhist'/totar;
 
 %% Plot up
-isPlot = true;
+if nargin > 5 && doPlot
+    isPlot = true;
+else
+    isPlot = false;
+end
 if isPlot
     clf;
     % Change the figure aspect ratio to taller
@@ -261,6 +265,8 @@ if isPlot
         else
             colormap(gca, cmocean('amp'))
         end
+        ax2.Position(3) = ax1.Position(3);
+
         caxis([var2min var2max]);
         c2 = colorbar('Location','EastOutside');
         ylabel(c2, var2);

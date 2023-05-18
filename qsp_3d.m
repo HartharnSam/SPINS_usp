@@ -39,7 +39,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var
 clf
 % Read in the grids & cut down size as required
 params = spins_params;
-if nargin < 4
+if nargin < 4 || isempty(phys_lims)
     xlims = [params.min_x params.min_x+params.Lx];
 else
     xlims = phys_lims([1 2]);
