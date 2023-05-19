@@ -1,6 +1,7 @@
 runscripts/*
 EOF/*
-plot_3d/*
+plot_3d/K3D*
+plot_3d/Figure4.html
 *.asv
 *.mat
 *.png

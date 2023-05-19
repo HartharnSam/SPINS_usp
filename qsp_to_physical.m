@@ -29,7 +29,7 @@ function ROI = qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-close all;
+%close all;
 % Option to invert the selected region (show outside the rectangle)
 isInvert = false;
 %% Load in data
@@ -137,63 +137,63 @@ data1(RegOfInterest) = NaN;
 data2(RegOfInterest) = NaN;
 
 if nargout == 0
-%% Plot it up
-% These are the upper plots of the variables in physical space
-% Copy over from the figure made by QSP_mapped
-hf1 = gcf;
-hf2 = figure(2);
-hf2.Position = hf1.Position;
-ch = get(hf1, 'children');
-copyobj(ch, hf2);
-%%
-aces = findobj(hf2,'Type','Axes');
-[~, aces]=sort_axes(aces);
-%%
-ax1 = aces(1);
-ax2 = aces(2);
-ax3 = aces(4);
+    %% Plot it up
+    % These are the upper plots of the variables in physical space
+    % Copy over from the figure made by QSP_mapped
+    hf1 = gcf;
+    hf2 = figure(2);
+    hf2.Position = hf1.Position;
+    ch = get(hf1, 'children');
+    copyobj(ch, hf2);
+    %%
+    aces = findobj(hf2,'Type','Axes');
+    [~, aces]=sort_axes(aces);
+    %%
+    ax1 = aces(1);
+    ax2 = aces(2);
+    ax3 = aces(4);
 
-% Replace the variable 1 plot with the ROI plots
-axes(ax1)
-hold off
-pcolor(ax1, x, z, data1); shading flat;
-title(['t = ', num2str(ii)]);
-colormap(gca, cmocean('dense'));
-caxis(var1_ROI);
-c = colorbar('location', 'EastOutside');
-ylabel(c, var1); ylabel('z (m)');
-axis([xlims zlims])
-xticklabels([]);
-hold on;
-plot(x(:, 1), z(:, 1), 'k-');
+    % Replace the variable 1 plot with the ROI plots
+    axes(ax1)
+    hold off
+    pcolor(ax1, x, z, data1); shading flat;
+    title(['t = ', num2str(ii)]);
+    colormap(gca, cmocean('dense'));
+    caxis(var1_ROI);
+    c = colorbar('location', 'EastOutside');
+    ylabel(c, var1); ylabel('z (m)');
+    axis([xlims zlims])
+    xticklabels([]);
+    hold on;
+    plot(x(:, 1), z(:, 1), 'k-');
 
-% Replace the variable 2 plot with the ROI plots
-axes(ax2);
-hold off
-pcolor(ax2, x, z, data2); shading flat;
-if strcmpi(var2, 'vorty')
-    colormap(gca, cmocean('balance'));
-else
-    colormap(gca, cmocean('amp'))
-end
-caxis(var2_ROI);
-c = colorbar('Location', 'EastOutside');
-ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
-hold on;
-plot(x(:, 1), z(:, 1), 'k-');
-axis([xlims zlims])
-ax2.Position(3) = ax1.Position(3);
+    % Replace the variable 2 plot with the ROI plots
+    axes(ax2);
+    hold off
+    pcolor(ax2, x, z, data2); shading flat;
+    if strcmpi(var2, 'vorty')
+        colormap(gca, cmocean('balance'));
+    else
+        colormap(gca, cmocean('amp'))
+    end
+    caxis(var2_ROI);
+    c = colorbar('Location', 'EastOutside');
+    ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
+    hold on;
+    plot(x(:, 1), z(:, 1), 'k-');
+    axis([xlims zlims])
+    ax2.Position(3) = ax1.Position(3);
 
-% Plot the QSP Region of Interest
-axes(ax3);
-hold on
-rectangle(ax3, 'Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI)],...
-    'EdgeColor', 'w');
+    % Plot the QSP Region of Interest
+    axes(ax3);
+    hold on
+    rectangle(ax3, 'Position', [var1_ROI(1) var2_ROI(1) diff(var1_ROI) diff(var2_ROI)],...
+        'EdgeColor', 'w');
 
-%% Finish off the plot by formatting it all
-figure_print_format;
+    %% Finish off the plot by formatting it all
+    figure_print_format;
 
-%% 
+    %%
 else
     ROI.Region = RegOfInterest;
     ROI.x = x;
