@@ -5,13 +5,12 @@ function make_qsp_isos(var1, var2, ii, var1lim, var2lim, savefnm)
 % plot_qsp_iso is run locally
 %
 % Inputs:
-%    input1 - Description
-%    input2 - Description
-%    input3 - Description
-%
-% Outputs:
-%    output1 - Description
-%    output2 - Description
+%    var1   - Name of initial variable (not set up outside spins_reader_new)
+%    var2   - Name of second variable (not up extensively yet)
+%    ii     - Timestep   
+%    var1lim- Limit for Region of Interest (Variable 1) 
+%    var2lim- Limit for Region of Interest (Variable 2)
+%    savefnm- Name out output .mat file
 %
 % Other m-files required: spins_reader_new
 % Subfunctions: none
@@ -22,7 +21,7 @@ function make_qsp_isos(var1, var2, ii, var1lim, var2lim, savefnm)
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
 % GitHub: https://github.com/HartharnSam
-% 19-May-2023; Last revision: 19-May-2023
+% 19-May-2023; Last revision: 19-Jun-2023
 % MATLAB Version: 9.12.0.2170939 (R2022a) Update 6
 
 %---------------------------------------------------
