@@ -60,6 +60,13 @@ In interactive mode (Region variable not input) USP\_to\_physical (2D only) will
 - var\_lims is the limits of the variables (essentially axis limits of USP), NOTE this is \[var2min var2max var1min var2max\], and can be set only for var2. It's probably usually good practice to set the var\_lims, as SPINS often outputs one or two super off the scale values which just drown out any other data (this is just like we usually would set the caxis).
 - Region is the Region of Interest to be plotted
 
+For the following command: 
+`>> usp_to_physical(67, 'rho', 'KE', [5.5 7], [0 0.005 -0.0095 0.0095]);`
+
+A region of interest can be isolated interactively:
+![](https://github.com/HartharnSam/SPINS_usp/usp_to_physical.gif)
+
+
 MATLAB files are set up to use as variable 1, density, salinity, or any other SPINS direct output file. As variable 2, it can do KE, speed, enstrophy, vorticity, dissipation, or any other SPINS direct output file. N.B.  when we use a square measure you do essentially squash low values together, and stretch the high values togehter, so consider this. 
 There's also an "isInvert" switch in qsp\_to\_physical which needs to be manually changed in the code, if it's set to true it shows us the physical space which is outside the highlighted usp space - in some ways it's "What part of the flow isn't interesting"
 
