@@ -1,5 +1,5 @@
 function [usp, myVar1, myVar2, var_lims] = usp_2d(ti, var1, var2, spat_lims, var_lims, doPlot)
-%USP_2D - produces USP, or joint probability plots to tell us where two
+%USP_2D - produces USP, or paired histograms to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables.
 %
@@ -43,8 +43,9 @@ function [usp, myVar1, myVar2, var_lims] = usp_2d(ti, var1, var2, spat_lims, var
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-%figure;
-% read in the grids & cut down to size
+
+%% read in the grids 
+% & cut down to size
 params = spins_params;
 if nargin < 4 || isempty(spat_lims)
     xlims = [params.min_x params.min_x+params.Lx];
@@ -80,7 +81,7 @@ end
 
 % parameter for the chebyshev grid which are on [-1,1]
 Nzc = Nz-1;
-% read in data
+%% read in data
 switch lower(var1)
     case 's'
         data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, z_inds);
@@ -105,7 +106,6 @@ switch lower(var1)
         catch
             error([var1, ' not configured']);
         end
-
 end
 
 switch lower(var2)
@@ -127,7 +127,7 @@ switch lower(var2)
         data2 = log10(data2);
     case 'speed'
         u = spins_reader_new('u',ti, xmin_ind:xmax_ind, z_inds);
-        w = spins_reader_new('w',ii, xmin_ind:xmax_ind, z_inds);
+        w = spins_reader_new('w',ti, xmin_ind:xmax_ind, z_inds);
         data2 = sqrt(u.^2 + w.^2);
         clear u w
     otherwise
@@ -216,8 +216,7 @@ else
     arcphys = ones(size(x))*(params.Lx/params.Nx)*(params.Lz/params.Nz);
     totar = sum(arcphys(:));
 end
-% brutally inefficient but will work for 2D (less inefficient than it used to be)
-% double loop
+% brutally inefficient but will work for 2D double loop
 for i = 1:Nx
     for jj = 1:Nz
         % update the corect box's total with the current area value
@@ -321,4 +320,3 @@ end
 if nargout > 3
     var_lims = [var2min var2max var1min var1max];
 end
-

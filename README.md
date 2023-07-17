@@ -1,4 +1,5 @@
-# USP for SPINS
+# USP (User-controlled Scatter Plots) for SPINS
+Extended mixing diagnostics in MATLAB for SPINS
 
 ## Introduction to method (what is USP, why do we want to use it?)
 

@@ -1,5 +1,5 @@
 function [usp, myVar1, myVar2, var_lims] = usp_3d(ti, var1, var2, phys_lims, var_lims)
-%USP_3D - produces USP, or joint probability plots to tell us where two
+%USP_3D - produces USP, or paired histograms to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables. For 3D unmapped simulations
 %
