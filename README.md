@@ -64,7 +64,7 @@ For the following command:
 `>> usp_to_physical(67, 'rho', 'KE', [5.5 7], [0 0.005 -0.0095 0.0095]);`
 
 A region of interest can be isolated interactively:
-![](https://github.com/HartharnSam/SPINS_usp/usp_to_physical.gif)
+![](./usp_to_physical.gif)
 
 
 MATLAB files are set up to use as variable 1, density, salinity, or any other SPINS direct output file. As variable 2, it can do KE, speed, enstrophy, vorticity, dissipation, or any other SPINS direct output file. N.B.  when we use a square measure you do essentially squash low values together, and stretch the high values togehter, so consider this. 
