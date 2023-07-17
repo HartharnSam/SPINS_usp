@@ -85,6 +85,24 @@ TODO: qsp\_to\_physical to work with the csv read in from SPINSqsp
 - [UNDER DEVELOPMENT] MATLAB QSP Statistics tool. 
 </details>
 
+<details>
+<summary>
+  3D Plotting
+</summary>
+
+[Make isosurface files](./plot_3d/make_usp_isos.m)
+
+[Plot isosurface plots](./plot_3d/plot_usp_iso.m)
+
+Produce isosurface plots outlining the edges of the Region of Interest highlighted in usp_to_physical_3d - specifically for 3D plots. These visualsisations can be explored alongside the more quantitative plots made by that function, to understand better the distribution of regions of interest. Example plot follows, with red indicating ROI boundaries, and black indicating a reference isopycnal. 
+
+![](./plot_3d/3D.png)
+
+Production in a two-step process
+1. make\_usp\_isos outputs a .mat file with a boolean grid of the isosurface based on the same grid as xgrid/ygrid/zgrid. This probably should be run on a computing system capable of handling the 3D data
+2. plot\_usp\_iso plots the outputs of the previous step, best run on a local machine for good graphics rendering! 
+
+</details>
 
 ### Choosing the criterion for USP space
 1. Based on the initial conditions (focus on the region that has changed)
@@ -96,6 +114,8 @@ Perhaps may be a bit hand-wavey (we know that super high KE values are probably 
 - [SPINS\_main](https://git.uwaterloo.ca/SPINS/SPINS_main.git)
 - [SPINSmatlab](https://github.com/ddeepwell/SPINSmatlab.git)
 
+## Development
+- Write in EOF codes
 
 ## References
 Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [https://doi.org/10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
