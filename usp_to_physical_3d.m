@@ -1,4 +1,4 @@
-function qsp_to_physical_3d(ii, var1, var2, phys_lims, var_lims, var1_lim, var2_lim)
+function usp_to_physical_3d(ii, var1, var2, phys_lims, var_lims, var1_lim, var2_lim)
 
 isInvert = false;
 
@@ -19,9 +19,9 @@ else
 end
 
 if nargin>4
-    [qsp, myVar1, myKE, var_lims] = qsp_3d(ii, var1, var2, phys_lims, var_lims);
+    [~, ~, ~, var_lims] = usp_3d(ii, var1, var2, phys_lims, var_lims);
 else
-    [qsp, myVar1, myKE, var_lims] = qsp_3d(ii, var1, var2, phys_lims);
+    [~, ~, ~, var_lims] = usp_3d(ii, var1, var2, phys_lims);
 end
 
 %% Set the region of interest
@@ -34,7 +34,7 @@ end
 
 % TODO: Add in interactive version?
 
-%% Read in grids & Data
+%% Read in grids
 x = xgrid_reader();
 y = ygrid_reader();
 z = zgrid_reader();
@@ -51,8 +51,9 @@ y = y(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
 z = z(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
 
 slice_grids;
-[Nx, Ny, Nz] = size(x);
+%[Nx, Ny, Nz] = size(x);
 
+%% Read in data
 switch var1
     case 's'
         data1 = spins_reader_new('s', ii, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
@@ -93,9 +94,9 @@ data2_std = std(data2, 0, 2);
 [~, error_ind] = min(sum(sum(data1 - data1_bar, 1), 3));
 data1_slice = squeeze(data1(:, error_ind, :));
 data2_slice = squeeze(data2(:, error_ind, :));
-vdata_slice = squeeze(v(:, error_ind, :));
+%vdata_slice = squeeze(v(:, error_ind, :));
 
-% %% Extract QSP region of interest from all of the physical data
+% %% Extract USP region of interest from all of the physical data
 % RegOfInterest = (~((data1 >= var1_lim(1)) & (data1 <= var1_lim(2)) & (data2 >= var2_lim(1))...
 %     & (data2 <= var2_lim(2))));
 % if isInvert
@@ -106,7 +107,7 @@ vdata_slice = squeeze(v(:, error_ind, :));
 %     data2(RegOfInterest) = NaN;
 % end
 
-%% Extract QSP region of interest from the mean and from the slice
+%% Extract USP region of interest from the mean and from the slice
 RegOfInterest_mean = (~((data1_bar >= var1_lim(1)) & (data1_bar <= var1_lim(2)) & (data2_bar >= var2_lim(1))...
     & (data2_bar <= var2_lim(2))));
 
@@ -131,12 +132,12 @@ RegOfInterest_slice = (~((data1_slice >= var1_lim(1)) & (data1_slice <= var1_lim
 data1_slice(RegOfInterest_slice) = NaN;
 data2_slice(RegOfInterest_slice) = NaN;
 
-vdata_slice(RegOfInterest_slice) = NaN;
+%vdata_slice(RegOfInterest_slice) = NaN;
 
 %% Plotting up
 figure;
-title(['t = ', num2str(ii*params.plot_interval), 's'])
-n_vert = 3;
+%title(['t = ', num2str(ii*params.plot_interval), 's'])
+n_vert = 2;
 subaxis(n_vert, 2, 1)
 pcolor(xv, zv, squeeze(data1_bar)); shading flat; c = colorbar;
 ylabel(c, ['$\overline{', var1, '}$'], 'interpreter', 'latex', 'FontSize', 16);
@@ -145,46 +146,58 @@ xticklabels([]);
 caxis(var_lims([3 4]));
 cmocean('dense');
 axis tight
+title('(a)');
 
-subaxis(n_vert, 2, 2)
-pcolor(xv, zv, squeeze(data2_bar)); shading flat; c = colorbar;
-ylabel(c, ['$\overline{', var2, '}$'], 'interpreter', 'latex', 'FontSize', 16);
-axis tight
-yticklabels([]);xticklabels([]);
-caxis(var_lims([1 2]));
-cmocean('amp');
+%subaxis(n_vert, 2, 2)
+%pcolor(xv, zv, squeeze(data2_bar)); shading flat; c = colorbar;
+%ylabel(c, ['$\overline{', var2, '}$'], 'interpreter', 'latex', 'FontSize', 16);
+%axis tight
+%yticklabels([]);xticklabels([]);
+%caxis(var_lims([1 2]));
+%cmocean('amp');
 
 subaxis(n_vert, 2, 3)
 pcolor(xv, zv, data_trans_freq/params.Ny *100); shading flat; c = colorbar;
 ylabel(c, '% in domain');
 ylabel('z (m)');
 axis tight
-xticklabels([]);
+%xticklabels([]);
 caxis([0 100])
 cmocean('matter');
-
-subaxis(n_vert, 2, 4)
-pcolor(xv, zv, vdata_slice.^2); shading flat; c = colorbar;
-ylabel(c, ['KE(v) (', num2str(error_ind), ')']);
-yticklabels([]);
-xticklabels([]);
-cmocean('amp');
-
-subaxis(n_vert, 2, 5);
-pcolor(xv, zv, data1_slice); shading flat; c = colorbar;
-ylabel(c, [var1, '(', num2str(error_ind), ')']);
-ylabel('z (m)');
 xlabel('x (m)');
-caxis(var_lims([3 4]));
-cmocean('dense');
+title('(c)');
 
-subaxis(n_vert, 2, 6);
-pcolor(xv, zv, data2_slice); shading flat; c = colorbar; 
-ylabel(c, [var2, '(', num2str(error_ind), ')']);
+%subaxis(n_vert, 2, 4)
+%pcolor(xv, zv, vdata_slice.^2); shading flat; c = colorbar;
+%ylabel(c, ['KE(v) (', num2str(error_ind), ')']);
+%yticklabels([]);
+%xticklabels([]);
+%cmocean('amp');
+
+% subaxis(n_vert, 2, 5);
+% pcolor(xv, zv, data1_slice); shading flat; c = colorbar;
+% ylabel(c, [var1, '(', num2str(error_ind), ')']);
+% ylabel('z (m)');
+% xlabel('x (m)');
+% caxis(var_lims([3 4]));
+% cmocean('dense');
+
+subaxis(n_vert, 2, 2);
+pcolor(xv, zv, data2_slice); shading flat; c = colorbar;
+ylabel(c, ['$',var2, '(', num2str(error_ind), ')$'], 'interpreter', 'latex');
 yticklabels([]);
 xlabel('x (m)');
 caxis(var_lims([1 2]));
 cmocean('amp');
+title('(b)')
+
+%subaxis(n_vert, 2, 6);
+%pcolor(xv, zv, data2_slice); shading flat; c = colorbar; 
+%ylabel(c, [var2, '(', num2str(error_ind), ')']);
+%yticklabels([]);
+%xlabel('x (m)');
+%caxis(var_lims([1 2]));
+%cmocean('amp');
 
 %subaxis(5, 2, 1, 4, 2, 2)
 %pcolor(myVar1, myKE, log10(qsp)); shading flat; colorbar;

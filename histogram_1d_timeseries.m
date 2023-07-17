@@ -7,8 +7,8 @@ var_lims = [-0.0095 .0095 -.0095 .0095];
 
 t1 = 0; t2 = 200;
 for ii = t1:t2
-    [qsp, myVar1, myVar2] = qsp_mapped(ii, var1, var2, spat_lims, var_lims);
-    var1_ts(:, ii-t1+1) = sum(qsp);
+    [usp, myVar1, myVar2] = usp_2d(ii, var1, var2, spat_lims, var_lims);
+    var1_ts(:, ii-t1+1) = sum(usp);
 end
 %%
 close all; 

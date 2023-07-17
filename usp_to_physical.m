@@ -1,9 +1,9 @@
-function ROI = qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
-%QSP_TO_PHYSICAL - Relate region of qsp graph to physical space.
+function ROI = usp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
+%USP_TO_PHYSICAL - Relate region of usp graph to physical space.
 % Can be used interactively by clicking a region, or by setting it in the
 % code
 %
-% Syntax:  qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
+% Syntax:  usp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
@@ -12,13 +12,13 @@ function ROI = qsp_to_physical(ii, var1, var2, spat_lims, var_lims, Region)
 %    spat_lims - [optional] Spatial Region of physical space [xmin xmax zmin zmax]
 %       optionally, only set the x limits. Defaults to full size of tank
 %    var_lims - [optional] realistic limits of the variables to investigate as [var2min var2max var1min var2max]
-%    Region - [optional] QSP Region of interest to display data for
+%    Region - [optional] USP Region of interest to display data for
 %
-% Other m-files required: qsp_mapped, spins_params, xgrid_reader,
+% Other m-files required: usp_2d, spins_params, xgrid_reader,
 % zgrid_reader, spins_reader_new, nearest_index, cmocean, plasma,
 % figure_print_format
 %
-% See also: qsp_mapped
+% See also: usp_2d
 % Author: Sam Hartharn-Evans
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
@@ -52,7 +52,7 @@ if nargin <= 4
     var_lims = [];
 end
 
-[~, ~, ~] = qsp_2d(ii, var1, var2, spat_lims, var_lims, (nargout==0));
+[~, ~, ~] = usp_2d(ii, var1, var2, spat_lims, var_lims, (nargout==0));
 
 
 %% Set region of interest
@@ -125,7 +125,7 @@ switch lower(var2)
         end
 end
 
-%% Extract QSP region of interest from physical data
+%% Extract USP region of interest from physical data
 RegOfInterest = (~((data1 >= var1_ROI(1)) & (data1 <= var1_ROI(2)) & (data2 >= var2_ROI(1))...
     & (data2 <= var2_ROI(2))));
 

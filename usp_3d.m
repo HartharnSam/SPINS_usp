@@ -1,9 +1,9 @@
-function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var_lims)
-%QSP_3D - produces QSP, or joint probability plots to tell us where two
+function [usp, myVar1, myVar2, var_lims] = usp_3d(ti, var1, var2, phys_lims, var_lims)
+%USP_3D - produces USP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables. For 3D unmapped simulations
 %
-% Syntax:  [qsp, myVar1, myVar2, var_lims] = qsp_3d(ii, var1, var2, phys_lims, var_lims)
+% Syntax:  [usp, myVar1, myVar2, var_lims] = usp_3d(ii, var1, var2, phys_lims, var_lims)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
@@ -17,7 +17,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var
 %   counterintuative, but more likely to set only the y limits than only x!
 %
 % Outputs:
-%    qsp - Histogram of combined volume
+%    usp - Histogram of combined volume
 %    myVar1 - variable values for each histogram box
 %    myVar2 - ""
 %    var_lims - Limits of the second variable calculated by the script
@@ -28,16 +28,17 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_3d(ti, var1, var2, phys_lims, var
 % Subfunctions: none
 % MAT-files required: none
 %
-% See also: qsp_to_physical, spins_QSP_csv
+% See also: usp_to_physical, spins_QSP_csv
 % Author:
 % Department of Applied Mathematics, University of Waterloo
 % email address:
 % GitHub:
-% 14-Jun-2022; Last revision: 20-Jun-2022
+% 14-Jun-2022; Last revision: 20-Jul-2023
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 
 clf
-% Read in the grids & cut down size as required
+%% Read in the grids 
+% & cut down size as required
 params = spins_params;
 if nargin < 4 || isempty(phys_lims)
     xlims = [params.min_x params.min_x+params.Lx];
@@ -70,8 +71,7 @@ z = z(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
 slice_grids;
 [Nx, Ny, Nz] = size(x);
 
-%time = 25;
-
+%% Read in data
 switch var1
     case 's'
         data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
@@ -122,7 +122,7 @@ switch lower(var2)
         % TODO: Add in vorticities, enstrophy?
 end
 
-%%Sort the data into the histogram boxes
+%% Sort the data into the histogram boxes
 numpts = 50;
 if nargin > 4 && numel(var_lims) == 4
     var1min = var_lims(3); var1max = var_lims(4);
@@ -167,11 +167,14 @@ for ii = 1:Nx
         end
     end
 end
+usp = myhist'; %TODO; weight by total area
 
-qsp = myhist'; %TODO; weight by total area
+%% Plot the data
 isPlot = true; % speeds up processing with no graphical outputs needed
 if isPlot
+    clf; 
     figure(1)
+
     ax1 = subaxis(4, 1, 1, 'MT', 0.04);
     pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
     title(['t = ', num2str(ti*params.plot_interval)]);
@@ -195,7 +198,7 @@ if isPlot
     
     % plot 2D QSP histogram
     axes(ax4)
-    imagesc(ax4, myVar1, myVar2, log10(qsp)); shading flat; set(gca, 'YDir', 'normal')
+    imagesc(ax4, myVar1, myVar2, log10(usp)); shading flat; set(gca, 'YDir', 'normal')
     yticklabels([]); xticklabels([]);
     colormap(gca, plasma);
     %caxis([-6 -2]);
@@ -205,20 +208,20 @@ if isPlot
     ax4.Position = ax4.Position;
     
     axes(ax3)
-    plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
+    plot(ax3, sum(usp, 2)./sum(usp(:)), myVar2, 'r-');
     ylim([var2min var2max])
     xlim([0 .15]);
     ylabel(var2);
-    ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
+    ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the USP axis
     xticklabels([]);
     
     % 1D Histogram for variable 1
     axes(ax5)
-    plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
+    plot(myVar1, sum(usp)./sum(usp(:)), 'b-');
     xlim([var1min var1max])
     ylim([0 .15]);
     xlabel(var1);
-    ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
+    ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the USP axis
     yticklabels([]);
 end
 if nargout > 3

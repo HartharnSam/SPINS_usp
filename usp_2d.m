@@ -1,9 +1,9 @@
-function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims, doPlot)
-%QSP_2D - produces QSP, or joint probability plots to tell us where two
+function [usp, myVar1, myVar2, var_lims] = usp_2d(ti, var1, var2, spat_lims, var_lims, doPlot)
+%USP_2D - produces USP, or joint probability plots to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables.
 %
-% Syntax:  [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var_lims)
+% Syntax:  [usp, myVar1, myVar2, var_lims] = usp_2d(ti, var1, var2, spat_lims, var_lims, doPlot
 %
 % Inputs:
 %    ti - Simulation timestep to output for
@@ -17,7 +17,7 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var
 %   counterintuative, but more likely to set only the y limits than only x!
 %
 % Outputs:
-%    qsp - Histogram of combined volume
+%    usp - Histogram of combined volume
 %    myVar1 - variable values for each histogram box
 %    myVar2 - ""
 %    var_lims - Limits of the second variable calculated by the script
@@ -28,12 +28,12 @@ function [qsp, myVar1, myVar2, var_lims] = qsp_2d(ti, var1, var2, spat_lims, var
 % Subfunctions: none
 % MAT-files required: none
 %
-% See also: qsp_to_physical, spins_QSP_csv
+% See also: usp_to_physical, spins_QSP_csv
 % Author:
 % Department of Applied Mathematics, University of Waterloo
 % email address:
 % GitHub:
-% 14-Jun-2022; Last revision: 20-Jun-2022
+% 14-Jun-2022; Last revision: 20-Jul-2023
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 %
 % Dev notes:
@@ -224,7 +224,7 @@ for i = 1:Nx
         myhist(var1box(i, jj),var2box(i, jj)) = myhist(var1box(i, jj), var2box(i, jj))+1*arcphys(i,jj);
     end
 end
-qsp = myhist'/totar;
+usp = myhist'/totar;
 
 %% Plot up
 if nargin > 5 && doPlot
@@ -287,7 +287,7 @@ if isPlot
 
     % Plot the 2d QSP histogram
     axes(ax4)
-    imagesc(ax4, myVar1, myVar2, log10(qsp)); set(ax4, 'YDir', 'normal')
+    imagesc(ax4, myVar1, myVar2, log10(usp)); set(ax4, 'YDir', 'normal')
     shading flat
     yticklabels([]);
     xticklabels([]);
@@ -300,7 +300,7 @@ if isPlot
 
     % 1D Histogram for variable 2
     axes(ax3)
-    plot(ax3, sum(qsp, 2)./sum(qsp(:)), myVar2, 'r-');
+    plot(ax3, sum(usp, 2)./sum(usp(:)), myVar2, 'r-');
     ylim([var2min var2max])
     xlim([0 .15]);
     ylabel(var2);
@@ -309,7 +309,7 @@ if isPlot
 
     % 1D Histogram for variable 1
     axes(ax5)
-    plot(myVar1, sum(qsp)./sum(qsp(:)), 'b-');
+    plot(myVar1, sum(usp)./sum(usp(:)), 'b-');
     xlim([var1min var1max])
     ylim([0 .15]);
     xlabel(var1);
