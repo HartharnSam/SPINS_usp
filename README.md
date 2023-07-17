@@ -16,29 +16,68 @@ Typically, the sorting algorithm can be used to investigate mixing, telling how 
 - Tagging of fluid parcels - we can map back from USP to physical space
 - Understanding covariance of fluid properties
 
-## Tools provided:
-- [USP\_2d](usp_2d.m) - MATLAB tool for calculating the USP histograms for 2D simulations, mapped or unmapped grids (easy to adjust parameters and run local analysis)
-- [USP\_3d](usp_3d.m) - MATLAB tool for doing this in 3D simulations too.  
-- [USP\_to\_physical](usp_to_physical.m) - MATLAB tool to identify what fluid in physical space meets the criteria identified from a USP histogram. 
-- \*[SPINS qsp](https://git.uwaterloo.ca/SPINS/SPINS_main/-/tree/master/src/cases/qsp) - A c++ tool for calculating USP within the SPINS architecture. Best if using large outputs, and/or 3D simulations. 
-- \*SPINS qsp read tool - Tool to read the .csv output by the SPINS qsp
-- \*MATLAB Statistics tool. 
-\* under development/not included here
+## Features \& Usage
+<details>
+<summary>
+  USP_2D/USP_3D
+</summary>
+
+[2D MATLAB Tool](usp_2d.m)
+
+[3D MATLAB Tool](usp_3d.m)
+
+MATLAB tool for calculating the USP histograms for 2D//3D simulations, mapped or unmapped grids (easy to adjust parameters and run local analysis) - mapped only for 2D. 
+
+Both USP\_2d, USP\_3d have the same input variables (wich broadly match their equivalents in USP_to_physical):
+- ii is the output number,
+- var1 is the first variable (USP x axis),
+- var2 second variable (USP y axis),
+- spat\_lims is the spatial region to plot \[xmin xmax zmin zmax\]
+- var\_lims is the limits of the variables (essentially axis limits of USP), NOTE this is \[var2min var2max var1min var2max\], and can be set only for var2. It's probably usually good practice to set the var\_lims, as SPINS often outputs one or two super off the scale values which just drown out any other data (this is just like we usually would set the caxis).
+- doPlot is a boolean switch to make plots, or to output data. 
 
 MATLAB files are set up to use as variable 1, density, salinity, or any other SPINS direct output file. As variable 2, it can do KE, speed, enstrophy, vorticity, dissipation, or any other SPINS direct output file. 
 
-TODO: qsp\_to\_physical to work with the csv read in from SPINSqsp
+</details>
 
-### Usage of tools
-Both USP\_2d, USP\_3d and USP\_to\_physical have the same input variables, ii is the output number, var1 is the first variable, var2 second variable, xlims is the x region to plot, and ke\_lims is the limits of the second variable. 
+<details>
+<summary>
+  USP_to_physical
+</summary>
+  
+[2D MATLAB Tool](usp_to_physical.m)
 
-USP\_to\_physical will then present to you the output from USP\_mapped (it in fact simply calls that function), prompting you to select the space in the USP histogram (by clicking two opposite corners of the rectangle). The interactive functionality can be switched off and replaced by fixed values by switching around some commented lines. 
+[3D MATLAB Tool](usp_to_physical_3d.m)
 
+MATLAB tool to identify what fluid in physical space meets the criteria identified from a USP histogram.
+
+In interactive mode (Region variable not input) USP\_to\_physical (2D only) will present to you the output from USP\_mapped (it in fact simply calls that function), prompting you to select the Region of Interest in the USP histogram (by clicking two opposite corners of the rectangle). It will then plot the fluid within this region of interest for both variables and the USP OR output the boolean mask for the ROI.
+
+- ii is the output number,
+- var1 is the first variable (USP x axis),
+- var2 second variable (USP y axis),
+- spat\_lims is the spatial region to plot \[xmin xmax zmin zmax\]
+- var\_lims is the limits of the variables (essentially axis limits of USP), NOTE this is \[var2min var2max var1min var2max\], and can be set only for var2. It's probably usually good practice to set the var\_lims, as SPINS often outputs one or two super off the scale values which just drown out any other data (this is just like we usually would set the caxis).
+- Region is the Region of Interest to be plotted
+
+MATLAB files are set up to use as variable 1, density, salinity, or any other SPINS direct output file. As variable 2, it can do KE, speed, enstrophy, vorticity, dissipation, or any other SPINS direct output file. N.B.  when we use a square measure you do essentially squash low values together, and stretch the high values togehter, so consider this. 
 There's also an "isInvert" switch in qsp\_to\_physical which needs to be manually changed in the code, if it's set to true it shows us the physical space which is outside the highlighted usp space - in some ways it's "What part of the flow isn't interesting"
 
-It's probably usually good practice to set the ke\_lims, as SPINS often outputs one or two super off the scale values which just drown out any other data (this is just like we usually would set the caxis). 
+TODO: Add a schematic here
+TODO: qsp\_to\_physical to work with the csv read in from SPINSqsp
 
-N.B. Note, when we use a square measure you do essentially squash low values together, and stretch the high values togehter, so consider this. 
+</details>
+
+<details>
+<summary>
+    SPINS tools
+</summary>
+  
+- [SPINS qsp](https://git.uwaterloo.ca/SPINS/SPINS_main/-/tree/master/src/cases/qsp) - A c++ tool for calculating USP within the SPINS architecture. Best if using large outputs, and/or 3D simulations. 
+- [UNDER DEVELOPMENT] SPINS qsp read tool - Tool to read the .csv output by the SPINS qsp
+- [UNDER DEVELOPMENT] MATLAB QSP Statistics tool. 
+</details>
+
 
 ### Choosing the criterion for USP space
 1. Based on the initial conditions (focus on the region that has changed)
@@ -46,8 +85,10 @@ N.B. Note, when we use a square measure you do essentially squash low values tog
 3. Some kind of pre-determined criteria (exceeding a threshold)
 Perhaps may be a bit hand-wavey (we know that super high KE values are probably bs, low KE is boring). 
 
-## TODO:
-- Fix the scaling for densities to be consistent through all scripts
+## See also:
+- [SPINS\_main](https://git.uwaterloo.ca/SPINS/SPINS_main.git)
+- [SPINSmatlab](https://github.com/ddeepwell/SPINSmatlab.git)
+
 
 ## References
 Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [https://doi.org/10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
