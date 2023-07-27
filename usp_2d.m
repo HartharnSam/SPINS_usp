@@ -234,7 +234,7 @@ end
 if isPlot
     clf;
     % Change the figure aspect ratio to taller
-    fig = gcf; fig.Position([3 4]) = [643.2000 531.2000];
+    fig = gcf; %fig.Position([3 4]) = [643.2000 531.2000];
 
     %tiledlayout(4, 1, 'TileSpacing', 'compact');
     isSanityCheck = true;

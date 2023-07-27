@@ -104,6 +104,22 @@ Production in a two-step process
 
 </details>
 
+<details>
+<summary>
+ 2D Plotting
+</summary>
+
+[Timestep Comparison](./plot_2d/usp_phys_plotter.m)
+
+[Inter-simulation Comparison](./plot_2d/usp_phys_plotter_comb.m)
+
+[Example Script](./Plot_All_USP_Phys.m)
+
+Produces USP plots for publication, such as figures 3 and 4 of USP paper. Example script to run both parts is provided in the Plot\_All\_USP\_Phys.m script. This is a good starting point for analysis of 2D simulation data, and comparing between simulations. 
+
+
+</details>
+
 ### Choosing the criterion for USP space
 1. Based on the initial conditions (focus on the region that has changed)
 2. An interesting feature on the USP space

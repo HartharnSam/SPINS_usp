@@ -1,9 +1,9 @@
-%% PLOT_QSP_ISO - isosurface maker for QSP tagged regions
-% Plots 3D isosurfaces produced by make_qsp_isos
-% Loads in .mat file saved by the make_qsp_isos script and plots them,
+%% PLOT_USP_ISO - isosurface maker for USP tagged regions
+% Plots 3D isosurfaces produced by make_usp_isos
+% Loads in .mat file saved by the make_usp_isos script and plots them,
 % for visualisation of 3D qsp_to_physical outputs
 %
-%
+
 clearvars; close all; clc
 %% Load data
 % Manually create 3D unmapped grid 

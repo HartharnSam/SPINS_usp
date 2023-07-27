@@ -54,24 +54,16 @@ end
 
 [~, ~, ~] = usp_2d(ii, var1, var2, spat_lims, var_lims, (nargout==0));
 
-
 %% Set region of interest
 if nargin > 5
     var1_ROI = Region([1 2]);
     var2_ROI = Region([3 4]);
 else
 
-    % Uncomment to set the region of interest interactively
+    % to set the region of interest interactively
     disp('Click the corners on the QSP plot to select your region of interest')
-    %isPolygon = true
-    %if ~isPolygon
     [var1_ROI, var2_ROI] = ginput(2);
     var1_ROI = sort(var1_ROI); var2_ROI = sort(var2_ROI); % Sorting means the clicking can be in any order
-    %else
-    %    disp('Press return to end')
-    %    [var1_ROI, var2_ROI] = ginput;
-    %end
-
 end
 %% Load in physical data
 % read in the grids & cut down
