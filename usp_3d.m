@@ -1,17 +1,17 @@
-function [usp, myVar1, myVar2, var_lims] = usp_3d(ti, var1, var2, phys_lims, var_lims)
+function [usp, myVar1, myVar2, varLims] = usp_3d(ti, var1, var2, physLims, varLims)
 %USP_3D - produces USP, or paired histograms to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables. For 3D unmapped simulations
 %
-% Syntax:  [usp, myVar1, myVar2, var_lims] = usp_3d(ii, var1, var2, phys_lims, var_lims)
+% Syntax:  [usp, myVar1, myVar2, varLims] = usp_3d(ii, var1, var2, physLims, varLims)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
 %    var1 - variable to compare to var2 (on x axis)
 %    var2 - Variable to compare to var1 (on y axis)
-%    phys_lims - [optional] Region of physical space [xmin xmax ymin ymax zmin zmax], can only
+%    physLims - [optional] Region of physical space [xmin xmax ymin ymax zmin zmax], can only
 %    specify the x limits. Defaults to full size of tank
-%    var_lims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
+%    varLims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
 %
 %   [NOTE] - var lims are in the order var2, var1 - it seems
 %   counterintuative, but more likely to set only the y limits than only x!
@@ -20,7 +20,7 @@ function [usp, myVar1, myVar2, var_lims] = usp_3d(ti, var1, var2, phys_lims, var
 %    usp - Histogram of combined volume
 %    myVar1 - variable values for each histogram box
 %    myVar2 - ""
-%    var_lims - Limits of the second variable calculated by the script
+%    varLims - Limits of the second variable calculated by the script
 %
 % Other m-files required: xgrid_reader, zgrid_reader, spins_params,
 % spins_reader_new, nearest_index, cheb, figure_print_format,
@@ -37,17 +37,17 @@ function [usp, myVar1, myVar2, var_lims] = usp_3d(ti, var1, var2, phys_lims, var
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 
 clf
-%% Read in the grids 
+%% Read in the grids
 % & cut down size as required
 params = spins_params;
-if nargin < 4 || isempty(phys_lims)
+if nargin < 4 || isempty(physLims)
     xlims = [params.min_x params.min_x+params.Lx];
 else
-    xlims = phys_lims([1 2]);
+    xlims = physLims([1 2]);
 end
-if nargin >=4 && numel(phys_lims) == 6
-    ylims = phys_lims([3 4]);
-    zlims = phys_lims([5 6]);
+if nargin >= 4 && numel(physLims) == 6
+    ylims = physLims([3 4]);
+    zlims = physLims([5 6]);
 else
     ylims = [params.min_y params.min_y+params.Ly];
     zlims = [params.min_z params.min_z+params.Lz];
@@ -57,16 +57,16 @@ x = xgrid_reader();
 y = ygrid_reader();
 z = zgrid_reader();
 
-xmin_ind = nearest_index(x(:,1,  1), xlims(1));
-xmax_ind = nearest_index(x(:,1, 1), xlims(2));
-ymin_ind = nearest_index(y(1, :, 1), ylims(1));
-ymax_ind = nearest_index(y(1, :, 1), ylims(2));
-zmin_ind = nearest_index(z(1, 1, :), zlims(1));
-zmax_ind = nearest_index(z(1, 1, :), zlims(2));
+xminInd = nearest_index(x(:,1,  1), xlims(1));
+xmaxInd = nearest_index(x(:,1, 1), xlims(2));
+yminInd = nearest_index(y(1, :, 1), ylims(1));
+ymaxInd = nearest_index(y(1, :, 1), ylims(2));
+zminInd = nearest_index(z(1, 1, :), zlims(1));
+zmaxInd = nearest_index(z(1, 1, :), zlims(2));
 
-x = x(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-y = y(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-z = z(xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+x = x(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+y = y(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+z = z(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 
 slice_grids;
 [Nx, Ny, Nz] = size(x);
@@ -74,74 +74,74 @@ slice_grids;
 %% Read in data
 switch var1
     case 's'
-        data1 = spins_reader_new('s', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-        data1 = data1.*(data1>0);
+        data1 = spins_reader_new('s', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+        data1 = data1.*(data1 > 0);
     case 'rho'
         try
-            data1 = spins_reader_new('rho', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+            data1 = spins_reader_new('rho', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         catch
-            rho0 = params.rho_0;
-            data1 = (eqn_of_state(spins_reader_new('t', ti, xmin_ind:xmax_ind,...
-                ymin_ind:ymax_ind, zmin_ind:zmax_ind)));
+            %rho0 = params.rho_0;
+            data1 = (eqn_of_state(spins_reader_new('t', ti, xminInd:xmaxInd,...
+                yminInd:ymaxInd, zminInd:zmaxInd)));
         end
     case 'enstrophy'
         try
-            data1 = spins_reader_new('enst', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+            data1 = spins_reader_new('enst', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         catch
-            data1 = 0.5*spins_reader_new('vorty', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind).^2;
+            data1 = 0.5*spins_reader_new('vorty', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd).^2;
         end
     otherwise
-        data1 = spins_reader_new(var1, ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        data1 = spins_reader_new(var1, ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         
 end
 
 switch lower(var2)
     case 'ke'
-        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-        v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        u = spins_reader_new('u', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+        w = spins_reader_new('w', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         
         data2 = 0.5.*(u.^2 + w.^2 + v.^2);
         clear u v w;
     case 'ke_v'
-        v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         data2 = 0.5.*(v.^2);
         clear v;
     case 'speed'
-        u = spins_reader_new('u', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-        v = spins_reader_new('v', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
-        w = spins_reader_new('w', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        u = spins_reader_new('u', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
+        w = spins_reader_new('w', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         
         data2 = sqrt(u.^2 + w.^2 + v.^2);
         clear u v w;
     case 'diss'
-        data2 = log10(spins_reader_new('diss', ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind));
+        data2 = log10(spins_reader_new('diss', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd));
         
     otherwise
-        data2 = spins_reader_new(var2, ti, xmin_ind:xmax_ind, ymin_ind:ymax_ind, zmin_ind:zmax_ind);
+        data2 = spins_reader_new(var2, ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
         % TODO: Add in vorticities, enstrophy?
 end
 
 %% Sort the data into the histogram boxes
 numpts = 50;
-if nargin > 4 && numel(var_lims) == 4
-    var1min = var_lims(3); var1max = var_lims(4);
+if nargin > 4 && numel(varLims) == 4
+    var1min = varLims(3); var1max = varLims(4);
 else % Use default var1 limits
     var1min = min(data1(:));
     var1max = max(data1(:));
 end
-data1(data1<var1min) = var1min;
-data1(data1>var1max) = var1max;
+data1(data1 < var1min) = var1min;
+data1(data1 > var1max) = var1max;
 
-if nargin>4
-    var2min = var_lims(1);
-    var2max = var_lims(2);
+if nargin > 4
+    var2min = varLims(1);
+    var2max = varLims(2);
 else
     var2min = min(data2(:));
     var2max = max(data2(:));
 end
-data2(data2<var2min) = var2min;
-data2(data2>var2max) = var2max;
+data2(data2 < var2min) = var2min;
+data2(data2 > var2max) = var2max;
 
 rangeVar1 = var1max-var1min;
 rangeVar2 = var2max-var2min;
@@ -150,10 +150,10 @@ dVar1 = rangeVar1/(numpts-1);
 dVar2 = rangeVar2/(numpts-1);
 
 var1box = ceil((data1-var1min)/dVar1);
-var1box = var1box+1*(data1==var1min);
+var1box = var1box+1*(data1 == var1min);
 
 var2box = ceil((data2-var2min)/dVar2);
-var2box = var2box+1*(data2==var2min);
+var2box = var2box+1*(data2 == var2min);
 
 myVar1 = var1min+(0.5:numpts-0.5)'*dVar1;
 myVar2 = var2min+(0.5:numpts-0.5)'*dVar2;
@@ -172,9 +172,9 @@ usp = myhist'; %TODO; weight by total area
 %% Plot the data
 isPlot = true; % speeds up processing with no graphical outputs needed
 if isPlot
-    clf; 
+    clf;
     figure(1)
-
+    
     ax1 = subaxis(4, 1, 1, 'MT', 0.04);
     pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
     title(['t = ', num2str(ti*params.plot_interval)]);
@@ -225,7 +225,7 @@ if isPlot
     yticklabels([]);
 end
 if nargout > 3
-    var_lims = [var2min var2max var1min var1max];
+    varLims = [var2min var2max var1min var1max];
 end
 
 
