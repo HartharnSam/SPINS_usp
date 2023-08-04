@@ -120,18 +120,31 @@ Produces USP plots for publication, such as figures 3 and 4 of USP paper. Exampl
 
 </details>
 
+<details>
+<summary>
+ Empirical Orthogonal Functions
+</summary>
+
+[USP EOFs](./EOF/usp_eof.m)
+
+Produces EOF analysis of the QSPs, in particular an analysis of the error maps as in Shaw \& Stastna (2019), for the purpose of improved choosing of appropriate time steps of interest.
+
+</details>
+
 ### Choosing the criterion for USP space
 1. Based on the initial conditions (focus on the region that has changed)
 2. An interesting feature on the USP space
 3. Some kind of pre-determined criteria (exceeding a threshold)
 Perhaps may be a bit hand-wavey (we know that super high KE values are probably bs, low KE is boring). 
 
+
 ## See also:
 - [SPINS\_main](https://git.uwaterloo.ca/SPINS/SPINS_main.git)
 - [SPINSmatlab](https://github.com/ddeepwell/SPINSmatlab.git)
+- [SPINS\_energetics](https://github.com/HartharnSam/SPINS_energetics) - Advanced analytics of energetics output by MATLAB
 
 ## Development
-- Write in EOF codes
 
 ## References
-Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [https://doi.org/10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
+Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [doi:10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
+Shaw \& Stastna, 2019; Feature identification in time-indexed model output. PLOS ONE, [doi:10.1371/journal.pone.0225439](https://doi.org/10.1371/journal.pone.0225439)
