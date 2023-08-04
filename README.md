@@ -147,4 +147,5 @@ Perhaps may be a bit hand-wavey (we know that super high KE values are probably 
 
 ## References
 Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [doi:10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
+
 Shaw \& Stastna, 2019; Feature identification in time-indexed model output. PLOS ONE, [doi:10.1371/journal.pone.0225439](https://doi.org/10.1371/journal.pone.0225439)
