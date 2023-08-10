@@ -41,7 +41,7 @@ for ii = 1:length(data_directory)
     ntitle(subplot_labels(ii, 2), 'location', 'northwest', 'cover', true)
 
     nexttile;
-    pcolor(ROI.x, ROI.z, double(~ROI.Region));
+    pcolor(ROI.x, ROI.z, double(~ROI.region));
     caxis([0 1]); cmocean('amp');
     if ii == 1
         ylabel('$z (m)$');
