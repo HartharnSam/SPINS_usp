@@ -63,11 +63,12 @@ z = zgrid_reader();
 
 xminInd = nearest_index(x(:, 1), xlims(1));
 xmaxInd = nearest_index(x(:, 1), xlims(2));
-if strcmpi(params.mapped_grid, 'true')
+is_cheb = strcmpi(params.mapped_grid, 'true') || strcmpi(params.type_z, 'NO_SLIP');
+
+if is_cheb
     zInds = [];
     x = x(xminInd:xmaxInd, :);
     z = z(xminInd:xmaxInd, :);
-    
     
 else
     zminInd = nearest_index(z(1, :), zlims(1));
@@ -100,6 +101,14 @@ switch lower(var1)
             data1 = (eqn_of_state(spins_reader_new('t', ti, xminInd:xmaxInd,...
                 zInds), 0));
         end
+    case 'rho_z2'
+        try 
+            data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
+        catch
+            spins_derivs('rho_z', ti, true);
+            data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
+        end
+            
     otherwise
         try
             data1 = spins_reader_new(var1, ti, xminInd:xmaxInd, zInds);
@@ -186,7 +195,9 @@ var1box = var1box+1*(data1 == var1min);
 var2box = ceil((data2-var2min)/dVar2);
 var2box = var2box+1*(data2 == var2min);
 
-if strcmpi(params.mapped_grid, 'true')
+
+
+if is_cheb
     %% Compute the area
     % Compute the area associated with each Chebyshev point using the values
     % halfway between the point below and above
@@ -240,7 +251,7 @@ if isPlot
     %tiledlayout(4, 1, 'TileSpacing', 'compact');
     isSanityCheck = true;
     if isSanityCheck % These are the upper plots of the variables in physical space
-        figure(1)
+        %figure(1)
         %ax1 = nexttile;
         ax1 = subaxis(4, 1, 1, 'MT', .05); % Uncomment if using a version
         %of matlab without tiledlayouts

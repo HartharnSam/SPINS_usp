@@ -70,7 +70,7 @@ load('all_qsp', 'usp_timeseries');
 % re-construct the USP", or some measure of complexity
 
 [m, n, o] = size(usp_timeseries);
-error_contour = 0.01;
+error_contour = 0.05;
 eof_input_data = reshape(usp_timeseries, m*n, o);
 [eof_error, u, coeff] = eof_error_map(eof_input_data, o);
 tiledlayout(2,1);
