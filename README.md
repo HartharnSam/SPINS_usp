@@ -1,5 +1,5 @@
 # USP (User-controlled Scatter Plots) for SPINS
-Extended mixing diagnostics in MATLAB for SPINS
+Extended mixing diagnostics in MATLAB for SPINS, as published in [Hartharn-Evans et al 2024](https://doi.org/10.5194/npg-31-61-2024)
 
 ## Introduction to method (what is USP, why do we want to use it?)
 
@@ -149,3 +149,6 @@ Perhaps may be a bit hand-wavey (we know that super high KE values are probably 
 Penney et al., 2020; Diapycnal mixing of passive tracers by Kelvin-Helmholtz instabilities. JFM, [doi:10.1017/jfm.2020.483](https://doi.org/10.1017/jfm.2020.483)
 
 Shaw \& Stastna, 2019; Feature identification in time-indexed model output. PLOS ONE, [doi:10.1371/journal.pone.0225439](https://doi.org/10.1371/journal.pone.0225439)
+
+Hartharn-Evans, Stastna \& Carr, 2024; A new approach to understanding fluid mixing in process-study models of stratified fluids. Nonlinear Processes in Geophysics, [doi:10.5194/npg-31-61-2024](https://doi.org/10.5194/npg-31-61-2024)
+
