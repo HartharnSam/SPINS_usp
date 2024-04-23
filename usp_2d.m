@@ -101,14 +101,21 @@ switch lower(var1)
             data1 = (eqn_of_state(spins_reader_new('t', ti, xminInd:xmaxInd,...
                 zInds), 0));
         end
+        %data1 = data1 + -0.5*params.delta_rho * tanh((z-params.rho_loc)/params.dz_rho);
     case 'rho_z2'
-        try 
+        try
             data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
         catch
             spins_derivs('rho_z', ti, true);
             data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
         end
-            
+    case 'rho_zz2'
+        try
+            data1 = log10(spins_reader_new('rho_zz', ti, xminInd:xmaxInd, zInds).^2);
+        catch
+            spins_derivs('rho_zz', ti, true);
+            data1 = log10(spins_reader_new('rho_zz', ti, xminInd:xmaxInd, zInds).^2);
+        end
     otherwise
         try
             data1 = spins_reader_new(var1, ti, xminInd:xmaxInd, zInds);

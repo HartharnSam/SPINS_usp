@@ -1,9 +1,10 @@
-function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region)
-%USP_TO_PHYSICAL - Relate region of usp graph to physical space.
-% Can be used interactively by clicking a region, or by setting it in the
-% code
+function physical_to_usp(ii, var1, var2, spatLims, varLims)
+%USP_TO_PHYSICAL - Reverse idea of usp_to_physical - click a grid location
+%and see where it sits in USP space, and identify other regions in the same
+%USP space. Not sure of it's utility... yet...
+% Used interactively by clicking a region
 %
-% Syntax:  usp_to_physical(ii, var1, var2, spatLims, varLims, region)
+% Syntax:  physical_to_usp(ii, var1, var2, spatLims, varLims)
 %
 % Inputs:
 %    ii - Simulation timestep to output for
@@ -12,7 +13,6 @@ function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region)
 %    spatLims - [optional] Spatial region of physical space [xmin xmax zmin zmax]
 %       optionally, only set the x limits. Defaults to full size of tank
 %    varLims - [optional] realistic limits of the variables to investigate as [var2min var2max var1min var2max]
-%    region - [optional] USP region of interest to display data for
 %
 % Other m-files required: usp_2d, spins_params, xgrid_reader,
 % zgrid_reader, spins_reader_new, nearest_index, cmocean, plasma,
@@ -23,8 +23,8 @@ function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region)
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
 % GitHub: https://github.com/HartharnSam
-% 17-Jun-2022; Last revision: 17-Jun-2022
-% MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
+% 23-Apr-2024; Last revision: 23-Apr-2024
+% MATLAB Version: 9.10.0.1739362 (R2021a) Update 5
 %
 %---------------------------------------------------
 %% BEGIN CODE %%
@@ -52,18 +52,6 @@ if nargin <= 4
     varLims = [];
 end
 
-[~, ~, ~] = usp_2d(ii, var1, var2, spatLims, varLims, (nargout == 0));
-
-%% Set region of interest
-if nargin > 5
-    var1ROI = region([1 2]);
-    var2ROI = region([3 4]);
-else
-    set(gcf, 'Position', groot().MonitorPositions(end, :));
-    disp('Click the corners on the QSP plot to select your region of interest')
-    [var1ROI, var2ROI] = ginput(2);
-    var1ROI = sort(var1ROI); var2ROI = sort(var2ROI); % Sorting means the clicking can be in any order
-end
 %% Load in physical data
 % read in the grids & cut down
 x = xgrid_reader();
@@ -81,7 +69,7 @@ switch var1
     case 'rho'
         data1 = spins_reader_new('rho', ii, xminInd:xmaxInd, []);
     case 'rho_z2'
-        try 
+        try
             data1 = spins_reader_new('rho_z', ii, xminInd:xmaxInd, []).^2;
         catch
             spins_derivs('rho_z', ii, true);
@@ -123,80 +111,77 @@ switch lower(var2)
         end
 end
 
-%% Extract USP region of interest from physical data
-RegOfInterest = (~((data1 >= var1ROI(1)) & (data1 <= var1ROI(2)) & (data2 >= var2ROI(1))...
-    & (data2 <= var2ROI(2))));
+%% And make the original plot
+tiledlayout(2, 1);
+ax1 = nexttile; ax2 = nexttile;
 
-if isInvert
-    RegOfInterest = ~RegOfInterest;
-end
+pcolor(ax1, x, z, data1); colorbar(ax1);
+shading(ax1, 'flat');
 
-data1(RegOfInterest) = NaN;
-data2(RegOfInterest) = NaN;
+title(ax1, ['t = ', num2str(ii)]);
+colormap(ax1, cmocean('dense'));
+c = colorbar(ax1, 'location', 'EastOutside');
+ylabel(c, var1); ylabel(ax1, 'z (m)');
+axis(ax1, [xlims zlims])
+xticklabels(ax1, []);
+hold(ax1, 'on');
+plot(ax1, x(:, 1), z(:, 1), 'k-');
 
-if nargout == 0
-    %% Plot it up
-    % These are the upper plots of the variables in physical space
-    % Copy over from the figure made by QSP_mapped
-    hf1 = gcf;
-    hf2 = figure(hf1.Number +1);
-    hf2.Position = hf1.Position;
-    ch = get(hf1, 'children');
-    copyobj(ch, hf2);
-    %%
-    aces = findobj(hf2,'Type','Axes');
-    [~, aces] = sort_axes(aces);
-    %%
-    ax1 = aces(1);
-    ax2 = aces(2);
-    ax3 = aces(4);
-    
-    % Replace the variable 1 plot with the ROI plots
-    axes(ax1)
-    hold off
-    pcolor(ax1, x, z, data1); shading flat;
-    title(['t = ', num2str(ii)]);
-    caxis(var1ROI);
-    colormap(gca, cmocean('dense'));
-    c = colorbar('location', 'EastOutside');
-    ylabel(c, var1); ylabel('z (m)');
-    axis([xlims zlims])
-    xticklabels([]);
-    hold on;
-    plot(x(:, 1), z(:, 1), 'k-');
-    
-    % Replace the variable 2 plot with the ROI plots
-    axes(ax2);
-    hold off
-    pcolor(ax2, x, z, data2); shading flat;
-    caxis(var2ROI);
-    if strcmpi(var2, 'vorty')
-        colormap(gca, cmocean('balance'));
-    else
-        colormap(gca, cmocean('amp'))
-    end
-    c = colorbar('Location', 'EastOutside');
-    ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
-    hold on;
-    plot(x(:, 1), z(:, 1), 'k-');
-    axis([xlims zlims])
-    ax2.Position(3) = ax1.Position(3);
-    
-    % Plot the QSP region of Interest
-    axes(ax3);
-    hold on
-    rectangle(ax3, 'Position', [var1ROI(1) var2ROI(1) diff(var1ROI) diff(var2ROI)],...
-        'EdgeColor', 'w');
-    
-    %% Finish off the plot by formatting it all
-    figure_print_format;
-    
-    %%
+pcolor(ax2, x, z, data2); colorbar(ax2);
+hold(ax2,'off');
+shading(ax2, 'flat');
+if strcmpi(var2, 'vorty')
+    colormap(ax2, cmocean('balance'));
 else
-    ROI.region = RegOfInterest;
-    ROI.x = x;
-    ROI.z = z;
+    colormap(ax2, cmocean('amp'))
 end
+c = colorbar(ax2, 'Location', 'EastOutside');
+ylabel(c, var2); xlabel(ax2, 'x (m)'); ylabel(ax2, 'z (m)');
+hold(ax2, 'on');
+plot(ax2, x(:, 1), z(:, 1), 'k-');
+axis(ax2, [xlims zlims])
+
+
+%% Set region of interest
+axes(ax1);
+set(gcf, 'Position', groot().MonitorPositions(end, :));
+disp('Click the corners on the QSP plot to select your region of interest')
+[xROI, zROI] = ginput(1);
+
+xROI_ind = nearest_index(x(:, 1), xROI);
+zROI_ind = nearest_index(z(xROI_ind, :), zROI);
+
+data1_ROI = data1(xROI_ind, zROI_ind);
+data2_ROI = data2(xROI_ind, zROI_ind);
+
+%% Plot the picked data on a standard USP plot
+
+clf;
+[~, myVar1, myVar2] = usp_2d(ii, var1, var2, spatLims, varLims, true);
+
+hf1 = gcf;
+aces = findobj(hf1,'Type','Axes');
+[~, aces] = sort_axes(aces);
+
+ax1_usp = aces(1);
+ax2_usp = aces(2);
+ax3_usp = aces(4);
+hold(ax3_usp, 'on')
+plot(ax3_usp, data1_ROI, data2_ROI, 'xw');
+plot(ax1_usp, xROI, zROI, 'xw');
+plot(ax2_usp, xROI, zROI, 'xw');
+
+%% plot a ROI plot based on the single bin
+% but first, identify the bin
+ROI1_bin = interp1(myVar1, 1:length(myVar1), data1_ROI);
+ROI1_bin = myVar1(floor(ROI1_bin) + 0:1);
+
+ROI2_bin = interp1(myVar2, 1:length(myVar2), data2_ROI);
+ROI2_bin = myVar1(floor(ROI2_bin) + 0:1);
+
+figure
+usp_to_physical(ii, var1, var2, spatLims, varLims, [ROI1_bin ROI2_bin]);
+
 end
 
 function [sortedPositions, sortedAxes] = sort_axes(arrayOfAxes)

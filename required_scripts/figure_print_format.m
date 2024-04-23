@@ -32,7 +32,7 @@ end
 if nargin < 2
     fontsize = 12;
 end
-
+warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode');
 % get figure children
 childs = allchild(fig_hand);
 
