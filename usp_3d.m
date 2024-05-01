@@ -68,7 +68,7 @@ x = x(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 y = y(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 z = z(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 
-slice_grids;
+[xv, zv] = slice_grids(x, y, z);
 [Nx, Ny, Nz] = size(x);
 
 %% Read in data
@@ -175,7 +175,7 @@ if isPlot
     clf;
     figure(1)
     
-    ax1 = subaxis(4, 1, 1, 'MT', 0.04);
+    subaxis(4, 1, 1, 'MT', 0.04);
     pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
     title(['t = ', num2str(ti*params.plot_interval)]);
     colormap(gca, cmocean('dense'));
@@ -184,7 +184,7 @@ if isPlot
     ylabel(c, var1); ylabel('z (m)');
     axis([xlims zlims])
     
-    ax2 = subaxis(4, 1, 2, 'MT', 0.04);
+    subaxis(4, 1, 2, 'MT', 0.04);
     pcolor(xv, zv, squeeze(data2(:, 1, :))); shading flat;
     colormap(gca, cmocean('amp'))
     caxis([var2min var2max]);

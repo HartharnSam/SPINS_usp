@@ -63,9 +63,9 @@ z = zgrid_reader();
 
 xminInd = nearest_index(x(:, 1), xlims(1));
 xmaxInd = nearest_index(x(:, 1), xlims(2));
-is_cheb = strcmpi(params.mapped_grid, 'true') || strcmpi(params.type_z, 'NO_SLIP');
+isCheb = strcmpi(params.mapped_grid, 'true') || strcmpi(params.type_z, 'NO_SLIP');
 
-if is_cheb
+if isCheb
     zInds = [];
     x = x(xminInd:xmaxInd, :);
     z = z(xminInd:xmaxInd, :);
@@ -204,7 +204,7 @@ var2box = var2box+1*(data2 == var2min);
 
 
 
-if is_cheb
+if isCheb
     %% Compute the area
     % Compute the area associated with each Chebyshev point using the values
     % halfway between the point below and above
@@ -235,10 +235,10 @@ else
     totar = sum(arcPhys(:));
 end
 % brutally inefficient but will work for 2D double loop
-for i = 1:Nx
+for ii = 1:Nx
     for jj = 1:Nz
         % update the corect box's total with the current area value
-        myhist(var1box(i, jj),var2box(i, jj)) = myhist(var1box(i, jj), var2box(i, jj))+1*arcPhys(i,jj);
+        myhist(var1box(ii, jj),var2box(ii, jj)) = myhist(var1box(ii, jj), var2box(ii, jj))+1*arcPhys(ii,jj);
     end
 end
 usp = myhist'/totar;
@@ -253,7 +253,7 @@ end
 if isPlot
     clf;
     % Change the figure aspect ratio to taller
-    fig = gcf; %fig.Position([3 4]) = [643.2000 531.2000];
+    %fig = gcf; %fig.Position([3 4]) = [643.2000 531.2000];
     
     %tiledlayout(4, 1, 'TileSpacing', 'compact');
     isSanityCheck = true;

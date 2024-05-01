@@ -151,8 +151,8 @@ disp('Click the corners on the QSP plot to select your region of interest')
 xROI_ind = nearest_index(x(:, 1), xROI);
 zROI_ind = nearest_index(z(xROI_ind, :), zROI);
 
-data1_ROI = data1(xROI_ind, zROI_ind);
-data2_ROI = data2(xROI_ind, zROI_ind);
+data1ROI = data1(xROI_ind, zROI_ind);
+data2ROI = data2(xROI_ind, zROI_ind);
 
 %% Plot the picked data on a standard USP plot
 
@@ -163,24 +163,25 @@ hf1 = gcf;
 aces = findobj(hf1,'Type','Axes');
 [~, aces] = sort_axes(aces);
 
-ax1_usp = aces(1);
-ax2_usp = aces(2);
+ax1USP = aces(1);
+ax2USP = aces(2);
 ax3_usp = aces(4);
 hold(ax3_usp, 'on')
-plot(ax3_usp, data1_ROI, data2_ROI, 'xw');
-plot(ax1_usp, xROI, zROI, 'xw');
-plot(ax2_usp, xROI, zROI, 'xw');
+plot(ax3_usp, data1ROI, data2ROI, 'xw');
+plot(ax1USP, xROI, zROI, 'xw');
+plot(ax2USP, xROI, zROI, 'xw');
 
 %% plot a ROI plot based on the single bin
 % but first, identify the bin
-ROI1_bin = interp1(myVar1, 1:length(myVar1), data1_ROI);
-ROI1_bin = myVar1(floor(ROI1_bin) + 0:1);
+data1Bin = interp1(myVar1, 1:length(myVar1), data1ROI);
+data1Bin = myVar1(floor(data1Bin) + 0:1);
 
-ROI2_bin = interp1(myVar2, 1:length(myVar2), data2_ROI);
-ROI2_bin = myVar1(floor(ROI2_bin) + 0:1);
+data2Bin = interp1(myVar2, 1:length(myVar2), data2ROI);
+data2Bin = myVar1(floor(data2Bin) + 0:1);
 
+% Run usp_to_physical, feeding in the single-bin ROI
 figure
-usp_to_physical(ii, var1, var2, spatLims, varLims, [ROI1_bin ROI2_bin]);
+usp_to_physical(ii, var1, var2, spatLims, varLims, [data1Bin data2Bin]);
 
 end
 

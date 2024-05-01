@@ -79,7 +79,7 @@ x = x(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 y = y(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 z = z(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 
-slice_grids;
+[xv, zv] = slice_grids(x, y, z);
 %[Nx, Ny, Nz] = size(x);
 
 %% Read in data
@@ -115,10 +115,10 @@ end
 
 %% Calculate some statistics
 data1Bar = mean(data1, 2);
-data1STDEV = std(data1, 0, 2);
+%data1STDEV = std(data1, 0, 2);
 
 data2Bar = mean(data2, 2);
-data2STDEV = std(data2, 0, 2);
+%data2STDEV = std(data2, 0, 2);
 
 [~, errorInd] = min(sum(sum(data1 - data1Bar, 1), 3));
 data1Slice = squeeze(data1(:, errorInd, :));
