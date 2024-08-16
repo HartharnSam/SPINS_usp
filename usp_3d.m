@@ -1,4 +1,4 @@
-function [usp, myVar1, myVar2, varLims] = usp_3d(ti, var1, var2, physLims, varLims)
+function [usp, myVar1, myVar2, varLims] = usp_3d(ii, var1, var2, spatLims, varLims, opts)
 %USP_3D - produces USP, or paired histograms to tell us where two
 %variables overlap, so we can find out if, when and where we get
 %combinations of two variables. For 3D unmapped simulations
@@ -33,24 +33,32 @@ function [usp, myVar1, myVar2, varLims] = usp_3d(ti, var1, var2, physLims, varLi
 % Department of Applied Mathematics, University of Waterloo
 % email address:
 % GitHub:
-% 14-Jun-2022; Last revision: 20-Jul-2023
+% 14-Jun-2022; Last revision: 16-Aug-2024
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
-
+arguments
+    ii (1, 1) uint16
+    var1 (1, 1) string
+    var2 (1, 1) string
+    spatLims (:, 1) double = []
+    varLims (:, 1) double = []
+    opts.data1 (:, :) double = []
+    opts.data2 (:, :) double = []
+end
 clf
 %% Read in the grids
 % & cut down size as required
 params = spins_params;
-if nargin < 4 || isempty(physLims)
-    xlims = [params.min_x params.min_x+params.Lx];
+if isempty(spatLims)
+    xlims = [0 params.Lx]+params.min_x;
 else
-    xlims = physLims([1 2]);
+    xlims = spatLims([1 2]);
 end
-if nargin >= 4 && numel(physLims) == 6
-    ylims = physLims([3 4]);
-    zlims = physLims([5 6]);
+if (numel(spatLims) == 6)
+    ylims = spatLims([3 4]);
+    zlims = spatLims([5 6]);
 else
-    ylims = [params.min_y params.min_y+params.Ly];
-    zlims = [params.min_z params.min_z+params.Lz];
+    ylims = [0 params.Ly]+params.min_y;
+    zlims = [0 params.Lz]+params.min_z ;
 end
 
 x = xgrid_reader();
@@ -72,59 +80,19 @@ z = z(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 [Nx, Ny, Nz] = size(x);
 
 %% Read in data
-switch var1
-    case 's'
-        data1 = spins_reader_new('s', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        data1 = data1.*(data1 > 0);
-    case 'rho'
-        try
-            data1 = spins_reader_new('rho', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        catch
-            %rho0 = params.rho_0;
-            data1 = (eqn_of_state(spins_reader_new('t', ti, xminInd:xmaxInd,...
-                yminInd:ymaxInd, zminInd:zmaxInd)));
-        end
-    case 'enstrophy'
-        try
-            data1 = spins_reader_new('enst', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        catch
-            data1 = 0.5*spins_reader_new('vorty', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd).^2;
-        end
-    otherwise
-        data1 = spins_reader_new(var1, ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        
+if isempty(opts.data1)
+    data1 = get_spins_3Ddata(var1, ii, xminInd, xmaxInd, yminInd, ymaxInd, zInds);
+else
+    data1 = opts.data1;
 end
-
-switch lower(var2)
-    case 'ke'
-        u = spins_reader_new('u', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        w = spins_reader_new('w', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        
-        data2 = 0.5.*(u.^2 + w.^2 + v.^2);
-        clear u v w;
-    case 'ke_v'
-        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        data2 = 0.5.*(v.^2);
-        clear v;
-    case 'speed'
-        u = spins_reader_new('u', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        v = spins_reader_new('v', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        w = spins_reader_new('w', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        
-        data2 = sqrt(u.^2 + w.^2 + v.^2);
-        clear u v w;
-    case 'diss'
-        data2 = log10(spins_reader_new('diss', ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd));
-        
-    otherwise
-        data2 = spins_reader_new(var2, ti, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        % TODO: Add in vorticities, enstrophy?
+if isempty(opts.data2)
+    data2 = get_spins_3Ddata(var2, ii, xminInd, xmaxInd, yminInd, ymaxInd, zInds);
+else
+    data2 = opts.data2;
 end
-
 %% Sort the data into the histogram boxes
 numpts = 50;
-if nargin > 4 && numel(varLims) == 4
+if (nargin > 4) && (numel(varLims) == 4)
     var1min = varLims(3); var1max = varLims(4);
 else % Use default var1 limits
     var1min = min(data1(:));
@@ -160,10 +128,13 @@ myVar2 = var2min+(0.5:numpts-0.5)'*dVar2;
 
 myhist = zeros(numpts, numpts);
 
-for ii = 1:Nx
-    for jj = 1:Ny
-        for kk = 1:Nz
-            myhist(var1box(ii, jj, kk), var2box(ii, jj, kk)) = myhist(var1box(ii, jj, kk), var2box(ii, jj, kk))+1;
+isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP');
+assert(~isCheb, "Currently not set up for chebyshev grids, see usp_2d for how to implement");
+
+for jj = 1:Nx
+    for kk = 1:Ny
+        for ll = 1:Nz
+            myhist(var1box(jj, kk, ll), var2box(jj, kk, ll)) = myhist(var1box(jj, kk, ll), var2box(jj, kk, ll))+1;
         end
     end
 end
@@ -175,16 +146,16 @@ if isPlot
     clf;
     figure(1)
     
-    subaxis(4, 1, 1, 'MT', 0.04);
+    subaxis(4, 1, 1, 'MarginTop', 0.04);
     pcolor(xv, zv, squeeze(data1(:, 1, :))); shading flat;
-    title(['t = ', num2str(ti*params.plot_interval)]);
+    title(['t = ', num2str(ii*params.plot_interval)]);
     colormap(gca, cmocean('dense'));
     caxis([var1min var1max]);
     c = colorbar('Location', 'EastOutside');
     ylabel(c, var1); ylabel('z (m)');
     axis([xlims zlims])
     
-    subaxis(4, 1, 2, 'MT', 0.04);
+    subaxis(4, 1, 2, 'MarginTop', 0.04);
     pcolor(xv, zv, squeeze(data2(:, 1, :))); shading flat;
     colormap(gca, cmocean('amp'))
     caxis([var2min var2max]);
@@ -224,7 +195,10 @@ if isPlot
     ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the USP axis
     yticklabels([]);
 end
-if nargout > 3
+if (nargout == 0)
+    clear usp
+end
+if (nargout > 3)
     varLims = [var2min var2max var1min var1max];
 end
 

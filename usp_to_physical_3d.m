@@ -1,4 +1,4 @@
-function usp_to_physical_3d(ii, var1, var2, physLims, varLims, var1Lim, var2Lim)
+function usp_to_physical_3d(ii, var1, var2, spatLims, varLims, region, opts)
 %USP_TO_PHYSICAL_3D - Relate region of usp graph to physical space for 3D sims.
 % Can be used interactively by clicking a region, or by setting it in the
 % code
@@ -29,41 +29,36 @@ function usp_to_physical_3d(ii, var1, var2, physLims, varLims, var1Lim, var2Lim)
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-isInvert = false;
+arguments
+    ii (1, 1) uint16
+    var1 (1, 1) string
+    var2 (1, 1) string
+    spatLims (:, 1) double = []
+    varLims (:, 1) double = []
+    region (:, 1) double = []
+    opts.data1 (:, :, :) double = []
+    opts.data2 (:, :, :) double = []
+    opts.isInvert (1, 1) logical = false; 
+end
 
+%% Load in grid data
 params = spins_params;
-if nargin < 4
-    xlims = [params.min_x params.min_x+params.Lx];
-    physLims = xlims;
+if isempty(spatLims)
+    xlims = [0 params.Lx]+params.min_x;
+    spatLims = xlims;
 else
-    xlims = physLims([1 2]);
+    xlims = spatLims([1 2]);
 end
-if nargin >= 4 && numel(physLims) == 6
-    ylims = physLims([3 4]);
-    zlims = physLims([5 6]);
+if numel(spatLims) == 6
+    ylims = spatLims([3 4]);
+    zlims = spatLims([5 6]);
 else
-    ylims = [params.min_y params.min_y+params.Ly];
-    zlims = [params.min_z params.min_z+params.Lz];
-    physLims = [physLims ylims zlims];
-end
-
-if nargin > 4
-    [~, ~, ~, varLims] = usp_3d(ii, var1, var2, physLims, varLims);
-else
-    [~, ~, ~, varLims] = usp_3d(ii, var1, var2, physLims);
+    ylims = [0 params.Ly]+params.min_y;
+    zlims = [0 params.Lz]+params.min_z;
+    spatLims = [spatLims ylims zlims];
 end
 
-%% Set the region of interest
-%var1Lim = [-0.03 -0.01];%0.99999];
-%var2Lim = [0 6.5]*1e-5;
-
-%disp('Click the corners on the QSP plot to select your region of interest')
-%[var1Lim, var2Lim] = ginput(2);
-%var1Lim = sort(var1Lim); var2Lim = sort(var2Lim); % Sorting means the clicking can be in any
-
-% TODO: Add in interactive version?
-
-%% Read in grids
+% Read in grids & cut down
 x = xgrid_reader();
 y = ygrid_reader();
 z = zgrid_reader();
@@ -80,38 +75,31 @@ y = y(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 z = z(xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
 
 [xv, zv] = slice_grids(x, y, z);
-%[Nx, Ny, Nz] = size(x);
 
-%% Read in data
-switch var1
-    case 's'
-        data1 = spins_reader_new('s', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        data1 = data1.*(data1 > 0);
-    case 'rho'
-        try
-            data1 = spins_reader_new('rho', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        catch
-            %rho0 = params.rho_0;
-            data1 = (eqn_of_state(spins_reader_new('t', ii, xminInd:xmaxInd,...
-                yminInd:ymaxInd, zminInd:zmaxInd)));
-        end
-    otherwise
-        data1 = spins_reader_new(var1, ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        
+%% Load in physical data
+if isempty(opts.data1)
+    data1 = get_spins_3Ddata(var1, ii, xminInd, xmaxInd, yminInd, ymaxInd, zInds);
+else
+    data1 = opts.data1;
+end
+if isempty(opts.data2)
+    data2 = get_spins_3Ddata(var2, ii, xminInd, xmaxInd, yminInd, ymaxInd, zInds);
+else
+    data2 = opts.data2;
 end
 
-switch lower(var2)
-    case 'ke'
-        u = spins_reader_new('u', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        v = spins_reader_new('v', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        w = spins_reader_new('w', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        
-        data2 = 0.5.*(u.^2 + w.^2 + v.^2);
-        clear u w;
-    case 'ke_v'
-        v = spins_reader_new('v', ii, xminInd:xmaxInd, yminInd:ymaxInd, zminInd:zmaxInd);
-        data2 = 0.5.*v.^2;
+if isempty(varLims)
+    [~, ~, ~, varLims] = usp_3d(ii, var1, var2, spatLims, "data1", data1, "data2", data2);
+else
+    usp_3d(ii, var1, var2, spatLims, varLims, "data1", data1, "data2", data2);
 end
+
+%% Set the region of interest
+%disp('Click the corners on the QSP plot to select your region of interest')
+%[var1Lim, var2Lim] = ginput(2);
+%var1Lim = sort(var1Lim); var2Lim = sort(var2Lim); % Sorting means the clicking can be in any
+
+% TODO: Add in interactive version?
 
 %% Calculate some statistics
 data1Bar = mean(data1, 2);
@@ -137,28 +125,33 @@ data2Slice = squeeze(data2(:, errorInd, :));
 % end
 
 %% Extract USP region of interest from the mean and from the slice
-regionOfInterestMean = (~((data1Bar >= var1Lim(1)) & (data1Bar <= var1Lim(2)) & (data2Bar >= var2Lim(1))...
-    & (data2Bar <= var2Lim(2))));
+% For the entire 3D dataset
+regionOfInterest = logical(~((data1 >= region(3)) & (data1 <= region(4)) & ...
+    (data2 >= region(1))& (data2 <= region(2))));
 
-if isInvert
+% Based only on the mean (x, z) field
+regionOfInterestMean = logical(~((data1Bar >= region(3)) & (data1Bar <= region(4)) ...
+    & (data2Bar >= region(1)) & (data2Bar <= region(2))));
+
+% Based on a randomly chosen (x, z) slice
+regionOfInterest_slice = logical(~((data1Slice >= region(3)) & (data1Slice <= region(4)) ...
+    & (data2Slice >= region(1)) & (data2Slice <= region(2))));
+
+if opts.isInvert
     regionOfInterest = ~regionOfInterest;
+    regionOfInterestMean = ~regionOfInterestMean;
+    regionOfInterest_slice = ~regionOfInterest_slice;
 end
 
 data1Bar(regionOfInterestMean) = NaN;
-data2Bar(regionOfInterestMean) = NaN;
+%data2Bar(regionOfInterestMean) = NaN;
 
 %data1STDEV(regionOfInterestMean) = NaN;
 %data2STDEV(regionOfInterestMean) = NaN;
 
-regionOfInterest = (~((data1 >= var1Lim(1)) & (data1 <= var1Lim(2)) & (data2 >= var2Lim(1))...
-    & (data2 <= var2Lim(2))));
-
 dataTransFreq = squeeze(sum(~regionOfInterest, 2));
 
-regionOfInterest_slice = (~((data1Slice >= var1Lim(1)) & (data1Slice <= var1Lim(2)) & (data2Slice >= var2Lim(1))...
-    & (data2Slice <= var2Lim(2))));
-
-data1Slice(regionOfInterest_slice) = NaN;
+%data1Slice(regionOfInterest_slice) = NaN;
 data2Slice(regionOfInterest_slice) = NaN;
 
 %vdata_slice(regionOfInterest_slice) = NaN;

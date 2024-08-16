@@ -1,26 +1,32 @@
-function [usp, myVar1, myVar2, varLims] = usp_2d(ti, var1, var2, spatLims, varLims, doPlot)
-%USP_2D - produces USP, or paired histograms to tell us where two
-%variables overlap, so we can find out if, when and where we get
-%combinations of two variables.
+function [usp, myVar1, myVar2, varLims] = usp_2d(ii, var1, var2, spatLims, varLims, isPlot, opts)
+%USP_2D - Generates a USP plot, or paired histogram to identify the spatial
+% overlap and interaction between two variables for 2D data.
 %
-% Syntax:  [usp, myVar1, myVar2, varLims] = usp_2d(ti, var1, var2, spatLims, varLims, doPlot
+% Syntax:
+%    [usp, myVar1, myVar2, varLims] = usp_2d(ti, var1, var2, spatLims,
+%    varLims, isPlot, "data1", data1, "data2", data2);
 %
 % Inputs:
-%    ti - Simulation timestep to output for
-%    var1 - variable to compare to var2 (on x axis)
-%    var2 - Variable to compare to var1 (on y axis)
-%    spatLims - [optional] Spatial Region of physical space [xmin xmax zmin zmax]
-%    specify the x limits. Defaults to full size of tank
-%    varLims - [optional] limits of variables to investigate as [var2min var2max var1min var2max]
-%
-%   [NOTE] - var lims are in the order var2, var1 - it seems
-%   counterintuative, but more likely to set only the y limits than only x!
+%    ii         - Index of the simulation output to process
+%    var1       - First variable to compare (plotted on x axis)
+%    var2       - Second variable to compare (plotted on y axis)
+%    spatLims   - [optional] Spatial limits in the format [xmin xmax zmin zmax]
+%               Defaults to full size of tank, optionally only [xmin xmax]
+%    varLims    - [optional] limits of variables to investigate in the format
+%               [var2min var2max var1min var2max]. Note: the order is var2
+%               (y-axis), var1 (x-axis) as it is more common to set only
+%               the y limits [var2min var2max] than only x!
+%   isPlot      - [Optional] Boolean flag for making a plot (true by default)
+%   opts        - [Optional] Variable-Value pairs to input data directly
 %
 % Outputs:
-%    usp - Histogram of combined volume
-%    myVar1 - variable values for each histogram box
-%    myVar2 - ""
-%    varLims - Limits of the second variable calculated by the script
+%    usp        - 2D histogram of combined volume
+%    myVar1     - Values of var1 in each histogram bin
+%    myVar2     - ""
+%    varLims    - Limits of the second variable calculated in the function
+%
+% Example:
+%   usp = usp_2d(15, 'rho', 'KE', [0 1 0 0.3], [], true, "data1", rho);
 %
 % Other m-files required: xgrid_reader, zgrid_reader, spins_params,
 % spins_reader_new, nearest_index, cheb, figure_print_format,
@@ -29,11 +35,11 @@ function [usp, myVar1, myVar2, varLims] = usp_2d(ti, var1, var2, spatLims, varLi
 % MAT-files required: none
 %
 % See also: usp_to_physical, spins_QSP_csv
-% Author:
-% Department of Applied Mathematics, University of Waterloo
-% email address:
-% GitHub:
-% 14-Jun-2022; Last revision: 20-Jul-2023
+% Author: Sam Hartharn-Evans
+% Department of Geography & Environmental Sciences, Northumbria University
+% email address: sam.hartharn-evans@northumbria.ac.uk
+% GitHub: https://github.com/HartharnSam
+% 14-Jun-2022; Last revision: 16-Aug-2024
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 %
 % Dev notes:
@@ -43,29 +49,39 @@ function [usp, myVar1, myVar2, varLims] = usp_2d(ti, var1, var2, spatLims, varLi
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-
+arguments
+    ii (1, 1) uint16
+    var1 (1, 1) string
+    var2 (1, 1) string
+    spatLims (1, :) double = []
+    varLims (1, :) double = []
+    isPlot (1, 1) logical = true;
+    opts.data1 (:, :) double = []
+    opts.data2 (:, :) double = []
+end
 %% read in the grids
 % & cut down to size
 params = spins_params;
-if nargin < 4 || isempty(spatLims)
-    xlims = [params.min_x params.min_x+params.Lx];
+if isempty(spatLims)
+    xlims = [0 params.Lx]+params.min_x;
 else
     xlims = spatLims([1 2]);
 end
-if nargin >= 4 && numel(spatLims) == 4
+if (numel(spatLims) == 4)
     zlims = spatLims([3 4]);
 else
-    zlims = [params.min_z params.min_z+params.Lz];
+    zlims = [0 params.Lz]+params.min_z;
 end
 
+% read in the grids & cut down
 x = xgrid_reader();
-z = zgrid_reader();
-
 xminInd = nearest_index(x(:, 1), xlims(1));
 xmaxInd = nearest_index(x(:, 1), xlims(2));
-isCheb = strcmpi(params.mapped_grid, 'true') || strcmpi(params.type_z, 'NO_SLIP');
+z = zgrid_reader(xminInd:xmaxInd, []);
 
-if isCheb
+isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP');
+
+if isequal(params.mapped_grid, 'true')
     zInds = [];
     x = x(xminInd:xmaxInd, :);
     z = z(xminInd:xmaxInd, :);
@@ -83,90 +99,29 @@ end
 % parameter for the chebyshev grid which are on [-1,1]
 Nzc = Nz-1;
 %% read in data
-switch lower(var1)
-    case 's'
-        data1 = spins_reader_new('s', ti, xminInd:xmaxInd, zInds);
-        data1 = data1.*(data1 > 0);
-    case 'enstrophy'
-        try
-            data1 = spins_reader_new('enst', ti, xminInd:xmaxInd, zInds);
-        catch
-            data1 = 0.5*spins_reader_new('vorty', ti, xminInd:xmaxInd, zInds).^2;
-        end
-    case 'rho'
-        try
-            data1 = spins_reader_new('rho', ti, xminInd:xmaxInd, zInds);
-        catch
-            %rho0 = params.rho_0;
-            data1 = (eqn_of_state(spins_reader_new('t', ti, xminInd:xmaxInd,...
-                zInds), 0));
-        end
-        %data1 = data1 + -0.5*params.delta_rho * tanh((z-params.rho_loc)/params.dz_rho);
-    case 'rho_z2'
-        try
-            data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
-        catch
-            spins_derivs('rho_z', ti, true);
-            data1 = spins_reader_new('rho_z', ti, xminInd:xmaxInd, zInds).^2;
-        end
-    case 'rho_zz2'
-        try
-            data1 = log10(spins_reader_new('rho_zz', ti, xminInd:xmaxInd, zInds).^2);
-        catch
-            spins_derivs('rho_zz', ti, true);
-            data1 = log10(spins_reader_new('rho_zz', ti, xminInd:xmaxInd, zInds).^2);
-        end
-    otherwise
-        try
-            data1 = spins_reader_new(var1, ti, xminInd:xmaxInd, zInds);
-        catch
-            error([var1, ' not configured']);
-        end
+if isempty(opts.data1)
+    data1 = get_spins_data(var1, ii, xminInd, xmaxInd, zInds);
+else
+    data1 = opts.data1;
 end
-
-switch lower(var2)
-    case 'ke'
-        u = spins_reader_new('u', ti, xminInd:xmaxInd, zInds);
-        w = spins_reader_new('w', ti, xminInd:xmaxInd, zInds);
-        data2 = 0.5*(u.^2 + w.^2);
-        clear u w
-    case 'vorty'
-        data2 = spins_reader_new('vorty', ti, xminInd:xmaxInd, zInds);
-    case 'enstrophy'
-        try
-            data2 = spins_reader_new('enst', ti, xminInd:xmaxInd, zInds);
-        catch
-            data2 = 0.5*spins_reader_new('vorty', ti, xminInd:xmaxInd, zInds).^2;
-        end
-    case 'diss'
-        data2 = spins_reader_new('diss', ti, xminInd:xmaxInd, zInds);
-        data2 = log10(data2);
-    case 'speed'
-        u = spins_reader_new('u',ti, xminInd:xmaxInd, zInds);
-        w = spins_reader_new('w',ti, xminInd:xmaxInd, zInds);
-        data2 = sqrt(u.^2 + w.^2);
-        clear u w
-    otherwise
-        try
-            data2 = spins_reader_new(var2, ti, xminInd:xmaxInd, zInds);
-        catch
-            error([var2, ' not configured']);
-        end
+if isempty(opts.data2)
+    data2 = get_spins_data(var2, ii, xminInd, xmaxInd, zInds);
+else
+    data2 = opts.data2;
 end
-
 %% Sort data into the histogram "boxes"
 numpts = 50;
 % for variable on x
-if nargin > 4 && numel(varLims) == 4
+if (nargin > 4) && (numel(varLims) == 4)
     var1min = varLims(3); var1max = varLims(4);
 else % Use defaults for the var1 limits
-    if strcmpi(var1, 'rho')
-        var1min = -params.delta_rho/2;
-        var1max = -var1min;
-    else
-        var1min = min(data1(:));
-        var1max = max(data1(:));
-    end
+    %if strcmpi(var1, 'rho')
+    %    var1min = -params.delta_rho/2;
+    %    var1max = -var1min;
+    %else
+    var1min = min(data1(:));
+    var1max = max(data1(:));
+    %end
 end
 % Cap the values at the limits - ignoring these values by NaN'ing them
 % would be a reasonable choice, but requires some more coding to make it
@@ -179,7 +134,7 @@ dVar1 = ranges/(numpts-1);
 myVar1 = var1min+(0.5:numpts-0.5)*dVar1;
 
 % For variable on y (KE)
-if nargin <= 4 || isempty(varLims) % Use defaults
+if (nargin <= 4) || (isempty(varLims)) % Use defaults
     var2min = min(data2(:));
     var2max = max(data2(:));
 else
@@ -201,8 +156,6 @@ var1box = var1box+1*(data1 == var1min);
 
 var2box = ceil((data2-var2min)/dVar2);
 var2box = var2box+1*(data2 == var2min);
-
-
 
 if isCheb
     %% Compute the area
@@ -235,20 +188,23 @@ else
     totar = sum(arcPhys(:));
 end
 % brutally inefficient but will work for 2D double loop
-for ii = 1:Nx
-    for jj = 1:Nz
+for jj = 1:Nx
+    for kk = 1:Nz
         % update the corect box's total with the current area value
-        myhist(var1box(ii, jj),var2box(ii, jj)) = myhist(var1box(ii, jj), var2box(ii, jj))+1*arcPhys(ii,jj);
+        myhist(var1box(jj, kk),var2box(jj, kk)) = myhist(var1box(jj, kk), var2box(jj, kk))+1*arcPhys(jj,kk);
     end
 end
+
 usp = myhist'/totar;
 
 %% Plot up
-if (nargin > 5 && doPlot) || nargout == 0
+if (nargin > 5 && isPlot) || (nargout == 0)
     isPlot = true;
 else
     isPlot = false;
 end
+[axLab1] = get_axis_labels(var1);
+[axLab2] = get_axis_labels(var2);
 
 if isPlot
     clf;
@@ -260,21 +216,21 @@ if isPlot
     if isSanityCheck % These are the upper plots of the variables in physical space
         %figure(1)
         %ax1 = nexttile;
-        ax1 = subaxis(4, 1, 1, 'MT', .05); % Uncomment if using a version
+        ax1 = subaxis(4, 1, 1, 'MarginTop', .05); % Uncomment if using a version
         %of matlab without tiledlayouts
         pcolor(x, z, data1), shading flat;
-        title(['t = ', num2str(ti)]);
+        title(['t = ', num2str(ii)]);
         colormap(gca, cmocean('dense'));
         caxis([var1min var1max]);
         c1 = colorbar(ax1, 'Location','EastOutside');
-        ylabel(c1, var1); ylabel('z (m)');
+        ylabel(c1, axLab1); ylabel('z (m)');
         axis([xlims zlims])
         xticklabels([]);
         hold on;
         plot(x(:, 1), z(:, 1), 'k-');
         
         %ax1 = nexttile;
-        ax2 = subaxis(4, 1, 2, 'MT', .05); % Uncomment if using a version
+        ax2 = subaxis(4, 1, 2, 'MarginTop', .05); % Uncomment if using a version
         %of matlab without tiledlayoutsax2 = subaxis(4, 1, 2, 'MT', 0.04);
         pcolor(x,z,data2), shading flat;
         
@@ -287,7 +243,7 @@ if isPlot
         
         caxis([var2min var2max]);
         c2 = colorbar('Location','EastOutside');
-        ylabel(c2, var2);
+        ylabel(c2, axLab2);
         xlabel('x (m)'); ylabel('z (m)');
         
         c2.Position(1) = c1.Position(1);
@@ -299,9 +255,9 @@ if isPlot
     end
     
     
-    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MB', 0.04, 'Holdaxis');
-    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MB', 0.04, 'Holdaxis');
-    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MB', 0.04, 'Holdaxis');
+    ax3 = subaxis(6, 3, 1, 4, 1, 2, 'MarginBottom', 0.04, 'Holdaxis', true);
+    ax4 = subaxis(6, 3, 2, 4, 1, 2, 'MarginBottom', 0.04, 'Holdaxis', true);
+    ax5 = subaxis(6, 3, 2, 6, 1, 1, 'MarginBottom', 0.04, 'Holdaxis', true);
     
     % Plot the 2d QSP histogram
     axes(ax4)
@@ -321,7 +277,7 @@ if isPlot
     plot(ax3, sum(usp, 2)./sum(usp(:)), myVar2, 'r-');
     ylim([var2min var2max])
     xlim([0 .15]);
-    ylabel(var2);
+    ylabel(axLab2);
     ax3.Position = [ax4.Position(1)-ax5.Position(4) ax4.Position(2) ax5.Position(4) ax4.Position(4)];% plonks the axes on the edge of the QSP axis
     xticklabels([]);
     
@@ -330,12 +286,15 @@ if isPlot
     plot(myVar1, sum(usp)./sum(usp(:)), 'b-');
     xlim([var1min var1max])
     ylim([0 .15]);
-    xlabel(var1);
+    xlabel(axLab1);
     ax5.Position = [ax4.Position(1) ax4.Position(2)-ax5.Position(4) ax4.Position(3) ax5.Position(4)]; % plonks the axes on the edge of the QSP axis
     yticklabels([]);
     figure_print_format(gcf);
     
 end
-if nargout > 3
+if (nargout == 0)
+    clear usp
+end
+if (nargout > 3)
     varLims = [var2min var2max var1min var1max];
 end

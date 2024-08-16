@@ -1,18 +1,27 @@
-function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region)
-%USP_TO_PHYSICAL - Relate region of usp graph to physical space.
-% Can be used interactively by clicking a region, or by setting it in the
-% code
+function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region, opts)
+%USP_TO_PHYSICAL - Maps a selected region from a USP graph to physical space.
+%   Can be used interactively by clicking a region in the USP graph, or
+%   programmatically by specifying the region in the arguments
 %
-% Syntax:  usp_to_physical(ii, var1, var2, spatLims, varLims, region)
+% Syntax:
+%   ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region, opts)
 %
 % Inputs:
-%    ii - Simulation timestep to output for
-%    var1 - variable to compare to var2 (on x axis)
-%    var2 - Variable to compare to var1 (on y axis)
-%    spatLims - [optional] Spatial region of physical space [xmin xmax zmin zmax]
-%       optionally, only set the x limits. Defaults to full size of tank
-%    varLims - [optional] realistic limits of the variables to investigate as [var2min var2max var1min var2max]
-%    region - [optional] USP region of interest to display data for
+%    ii         - Index of the simulation output to process
+%    var1       - First variable to compare (plotted on x axis)
+%    var2       - Second variable to compare (plotted on y axis)
+%    spatLims   - [optional] Spatial limits in the format [xmin xmax zmin zmax]
+%               Defaults to full size of tank, optionally only [xmin xmax]
+%    varLims    - [optional] limits of variables to investigate in the format
+%               [var2min var2max var1min var2max]. Note: the order is var2
+%               (y-axis), var1 (x-axis) as it is more common to set only
+%               the y limits [var2min var2max] than only x!
+%    region     - [optional] USP region of interest to display data for. If
+%               empty, the user will be prompted to interactively provide
+%               it
+%    opts       - [Optional] Variable-Value pairs to input data directly
+%
+%    ROI - Region of Interest in Physical space corresponding to selected USP region
 %
 % Other m-files required: usp_2d, spins_params, xgrid_reader,
 % zgrid_reader, spins_reader_new, nearest_index, cmocean, plasma,
@@ -23,39 +32,82 @@ function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region)
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
 % GitHub: https://github.com/HartharnSam
-% 17-Jun-2022; Last revision: 17-Jun-2022
+% 17-Jun-2022; Last revision: 17-Aug-2024
 % MATLAB Version: 9.12.0.1956245 (R2022a) Update 2
 %
 %---------------------------------------------------
 %% BEGIN CODE %%
 %---------------------------------------------------
-%close all;
-% Option to invert the selected region (show outside the rectangle)
-isInvert = false;
-%% Load in data
-% Compute the qsp data
+arguments
+    ii (1, 1) uint16
+    var1 (1, 1) string
+    var2 (1, 1) string
+    spatLims (:, 1) double = []
+    varLims (:, 1) double = []
+    region (:, 1) double = []
+    opts.data1 (:, :) double = []
+    opts.data2 (:, :) double = []
+    opts.isInvert (1, 1) logical = false % Option to invert the selected region (show outside the rectangle)
+end
+
+%% Load in grid data
 params = spins_params;
-if nargin < 4 || isempty(spatLims)
-    xlims = [params.min_x params.min_x+params.Lx];
+if isempty(spatLims)
+    xlims = [0 params.Lx]+params.min_x;
     spatLims = xlims;
 else
     xlims = spatLims([1 2]);
 end
-if nargin >= 4 && numel(spatLims) == 4
+if numel(spatLims) == 4
     zlims = spatLims([3 4]);
 else
-    zlims = [params.min_z params.min_z+params.Lz];
+    zlims = [0 params.Lz]+params.min_z;
     spatLims([3 4]) = zlims;
 end
 
-if nargin <= 4
-    varLims = [];
+% read in the grids & cut down
+x = xgrid_reader();
+xminInd = nearest_index(x(:, 1), xlims(1));
+xmaxInd = nearest_index(x(:, 1), xlims(2));
+z = zgrid_reader(xminInd:xmaxInd, []);
+
+if isequal(params.mapped_grid, 'true')
+    zInds = [];
+    x = x(xminInd:xmaxInd, :);
+    z = z(xminInd:xmaxInd, :);
+else
+    zminInd = nearest_index(z(1, :), zlims(1));
+    zmaxInd = nearest_index(z(1, :), zlims(2));
+    zInds = zminInd:zmaxInd;
+    x = x(xminInd:xmaxInd, zInds);
+    z = z(xminInd:xmaxInd, zInds);
 end
 
-[~, ~, ~] = usp_2d(ii, var1, var2, spatLims, varLims, (nargout == 0));
+%% Load in physical data
+
+if isempty(opts.data1)
+    data1 = get_spins_data(var1, ii, xminInd, xmaxInd, zInds);
+else
+    if isequal(size(x), size(opts.data1))
+        data1 = opts.data1;
+    else
+        data1 = opts.data1(xminInd:xmaxInd, zInds);
+    end
+end
+if isempty(opts.data2)
+    data2 = get_spins_data(var2, ii, xminInd, xmaxInd, zInds);
+else
+    if isequal(size(x), size(opts.data2))
+        data2 = opts.data2;
+    else
+        data2 = opts.data2(xminInd:xmaxInd, zInds);
+    end
+end
+
+[~, ~, ~] = usp_2d(ii, var1, var2, spatLims, varLims, (nargout == 0), "data1", data1, "data2", data2);
 
 %% Set region of interest
-if nargin > 5
+if (nargin > 5)
     var1ROI = region([1 2]);
     var2ROI = region([3 4]);
 else
@@ -64,77 +116,22 @@ else
     [var1ROI, var2ROI] = ginput(2);
     var1ROI = sort(var1ROI); var2ROI = sort(var2ROI); % Sorting means the clicking can be in any order
 end
-%% Load in physical data
-% read in the grids & cut down
-x = xgrid_reader();
-xminInd = nearest_index(x(:, 1), xlims(1));
-xmaxInd = nearest_index(x(:, 1), xlims(2));
-x = x(xminInd:xmaxInd, :);
-z = zgrid_reader(xminInd:xmaxInd, []);
-
-% note we still read in any z data from the region we want to cut due to
-% the complicated cheb grid
-switch var1
-    case 's'
-        data1 = spins_reader_new('s',ii, xminInd:xmaxInd, []);
-        data1 = data1.*(data1 > 0); % We always know for salinity -ve isn't real
-    case 'rho'
-        data1 = spins_reader_new('rho', ii, xminInd:xmaxInd, []);
-    case 'rho_z2'
-        try 
-            data1 = spins_reader_new('rho_z', ii, xminInd:xmaxInd, []).^2;
-        catch
-            spins_derivs('rho_z', ii, true);
-            data1 = spins_reader_new('rho_z', ii, xminInd:xmaxInd, []).^2;
-        end
-    otherwise
-        try
-            data1 = spins_reader_new(var1, ii, xminInd:xmaxInd, []);
-        catch
-            error([var1, ' not configured']);
-        end
-end
-
-switch lower(var2)
-    case 'ke'
-        u = spins_reader_new('u',ii, xminInd:xmaxInd, []);
-        w = spins_reader_new('w',ii, xminInd:xmaxInd, []);
-        data2 = 0.5*(u.^2+w.^2);
-    case 'vorty'
-        data2 = spins_reader_new('vorty', ii, xminInd:xmaxInd, []);
-    case 'enstrophy'
-        try
-            data2 = spins_reader_new('enstrophy', ii, xminInd:xmaxInd, []);
-        catch
-            data2 = 0.5*spins_reader_new('vorty', ii, xminInd:xmaxInd, []).^2;
-        end
-    case 'diss'
-        data2 = spins_reader_new('diss', ii, xminInd:xmaxInd, []);
-        data2 = log10(data2);
-    case 'speed'
-        u = spins_reader_new('u',ii, xminInd:xmaxInd, []);
-        w = spins_reader_new('w',ii, xminInd:xmaxInd, []);
-        data2 = sqrt(u.^2 + w.^2);
-    otherwise
-        try
-            data2 = spins_reader_new(var2, ii, xminInd:xmaxInd, []);
-        catch
-            error([var2, ' not configured']);
-        end
-end
 
 %% Extract USP region of interest from physical data
-RegOfInterest = (~((data1 >= var1ROI(1)) & (data1 <= var1ROI(2)) & (data2 >= var2ROI(1))...
+regionOfInterest = (~((data1 >= var1ROI(1)) & (data1 <= var1ROI(2)) & (data2 >= var2ROI(1))...
     & (data2 <= var2ROI(2))));
 
-if isInvert
-    RegOfInterest = ~RegOfInterest;
+if opts.isInvert
+    regionOfInterest = ~regionOfInterest;
 end
 
-data1(RegOfInterest) = NaN;
-data2(RegOfInterest) = NaN;
+data1(regionOfInterest) = NaN;
+data2(regionOfInterest) = NaN;
 
-if nargout == 0
+[axLab1] = get_axis_labels(var1);
+[axLab2] = get_axis_labels(var2);
+
+if (nargout == 0)
     %% Plot it up
     % These are the upper plots of the variables in physical space
     % Copy over from the figure made by QSP_mapped
@@ -159,7 +156,7 @@ if nargout == 0
     caxis(var1ROI);
     colormap(gca, cmocean('dense'));
     c = colorbar('location', 'EastOutside');
-    ylabel(c, var1); ylabel('z (m)');
+    ylabel(c, axLab1); ylabel('z (m)');
     axis([xlims zlims])
     xticklabels([]);
     hold on;
@@ -176,7 +173,7 @@ if nargout == 0
         colormap(gca, cmocean('amp'))
     end
     c = colorbar('Location', 'EastOutside');
-    ylabel(c, var2); xlabel('x (m)'); ylabel('z (m)');
+    ylabel(c, axLab2); xlabel('x (m)'); ylabel('z (m)');
     hold on;
     plot(x(:, 1), z(:, 1), 'k-');
     axis([xlims zlims])
@@ -193,7 +190,7 @@ if nargout == 0
     
     %%
 else
-    ROI.region = RegOfInterest;
+    ROI.region = regionOfInterest;
     ROI.x = x;
     ROI.z = z;
 end

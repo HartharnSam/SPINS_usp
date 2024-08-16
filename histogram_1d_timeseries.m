@@ -6,6 +6,7 @@ spat_lims = [params.min_x params.min_x+params.Lx params.min_z params.min_z+param
 var_lims = [-0.0095 .0095 -.0095 .0095];
 
 t1 = 0; t2 = 200;
+var1_ts = NaN(50, lenghth(t1:t2));
 for ii = t1:t2
     [usp, myVar1, myVar2] = usp_2d(ii, var1, var2, spatLims, varLims);
     var1_ts(:, ii-t1+1) = sum(usp);
