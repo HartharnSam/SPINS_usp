@@ -84,14 +84,14 @@ isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP'
 if isequal(params.mapped_grid, 'true')
     zInds = [];
     x = x(xminInd:xmaxInd, :);
-    z = z(xminInd:xmaxInd, :);
+    %z = z(xminInd:xmaxInd, :);
     
 else
     zminInd = nearest_index(z(1, :), zlims(1));
     zmaxInd = nearest_index(z(1, :), zlims(2));
     zInds = zminInd:zmaxInd;
     x = x(xminInd:xmaxInd, zInds);
-    z = z(xminInd:xmaxInd, zInds);
+    z = z(:, zInds);
 end
 % get the size of the grids
 [Nx, Nz] = size(x);

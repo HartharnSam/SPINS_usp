@@ -29,9 +29,14 @@ switch lower(var)
         w = spins_reader_new('w',ii, xminInd:xmaxInd, zInds);
         data = sqrt(u.^2 + w.^2);
     case 'diss'
-        data = spins_reader_new('diss', ii, xminInd:xmaxInd, zInds);
+        try
+            data = spins_reader_new('diss', ii, xminInd:xmaxInd, zInds);
+        catch 
+            data = spins_derivs('diss', ii, true);
+            data = data(xminInd:xmaxInd, zInds);
+        end
         data = log10(data);
-        
+
     case 'rho'
         try
             data = spins_reader_new('rho', ii, xminInd:xmaxInd, zInds);
@@ -55,12 +60,23 @@ switch lower(var)
             spins_derivs('rho_zz', ii, true);
             data = log10(spins_reader_new('rho_zz', ii, xminInd:xmaxInd, zInds).^2);
         end
-        
+    case 'u_z2'
+        try
+            data = spins_reader_new('u_z', ii, xminInd:xmaxInd, zInds).^2;
+        catch
+            spins_derivs('u_z', ii, true);
+            data = spins_reader_new('u_z', ii, xminInd:xmaxInd, zInds).^2;
+            delete("u_z."+ii);
+        end
     otherwise
         try
             data = spins_reader_new(var, ii, xminInd:xmaxInd, zInds);
         catch
-            error([var, ' not configured']);
+            try
+                data = spins_derivs(var, ii, false, xminInd:xmaxInd, zInds);
+            catch
+                error(var+' not configured');
+            end
         end
 end
 end

@@ -1,4 +1,4 @@
-function ROI = usp_to_physical(ii, var1, var2, spatLims, varLims, region, opts)
+function [ROI, vol] = usp_to_physical(ii, var1, var2, spatLims, varLims, region, opts)
 %USP_TO_PHYSICAL - Maps a selected region from a USP graph to physical space.
 %   Can be used interactively by clicking a region in the USP graph, or
 %   programmatically by specifying the region in the arguments
@@ -48,6 +48,7 @@ arguments
     opts.data1 (:, :) double = []
     opts.data2 (:, :) double = []
     opts.isInvert (1, 1) logical = false % Option to invert the selected region (show outside the rectangle)
+    opts.isPlot (1, 1) logical = true
 end
 
 %% Load in grid data
@@ -74,13 +75,13 @@ z = zgrid_reader(xminInd:xmaxInd, []);
 if isequal(params.mapped_grid, 'true')
     zInds = [];
     x = x(xminInd:xmaxInd, :);
-    z = z(xminInd:xmaxInd, :);
+    %z = z(xminInd:xmaxInd, :);
 else
     zminInd = nearest_index(z(1, :), zlims(1));
     zmaxInd = nearest_index(z(1, :), zlims(2));
     zInds = zminInd:zmaxInd;
     x = x(xminInd:xmaxInd, zInds);
-    z = z(xminInd:xmaxInd, zInds);
+    z = z(:, zInds);
 end
 
 %% Load in physical data
@@ -104,10 +105,10 @@ else
     end
 end
 
-[~, ~, ~] = usp_2d(ii, var1, var2, spatLims, varLims, (nargout == 0), "data1", data1, "data2", data2);
+[~, ~, ~] = usp_2d(ii, var1, var2, spatLims, varLims, opts.isPlot, "data1", data1, "data2", data2);
 
 %% Set region of interest
-if (nargin > 5)
+if (~isempty(region))
     var1ROI = region([1 2]);
     var2ROI = region([3 4]);
 else
@@ -131,7 +132,7 @@ data2(regionOfInterest) = NaN;
 [axLab1] = get_axis_labels(var1);
 [axLab2] = get_axis_labels(var2);
 
-if (nargout == 0)
+if (nargout ~= 1) && opts.isPlot
     %% Plot it up
     % These are the upper plots of the variables in physical space
     % Copy over from the figure made by QSP_mapped
@@ -157,7 +158,7 @@ if (nargout == 0)
     colormap(gca, cmocean('dense'));
     c = colorbar('location', 'EastOutside');
     ylabel(c, axLab1); ylabel('z (m)');
-    axis([xlims zlims])
+    axis(spatLims')
     xticklabels([]);
     hold on;
     plot(x(:, 1), z(:, 1), 'k-');
@@ -176,7 +177,7 @@ if (nargout == 0)
     ylabel(c, axLab2); xlabel('x (m)'); ylabel('z (m)');
     hold on;
     plot(x(:, 1), z(:, 1), 'k-');
-    axis([xlims zlims])
+    axis(spatLims')
     ax2.Position(3) = ax1.Position(3);
     
     % Plot the QSP region of Interest
@@ -189,10 +190,20 @@ if (nargout == 0)
     figure_print_format;
     
     %%
-else
+end
+if (nargout >= 1)
     ROI.region = regionOfInterest;
     ROI.x = x;
     ROI.z = z;
+end
+
+if (nargout == 2)
+    isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP');
+    [Nx, Nz] = size(x);
+    
+    % parameter for the chebyshev grid which are on [-1,1]
+    Nzc = Nz-1;
+    vol = getvol(isCheb, Nzc, zInds, params, regionOfInterest);
 end
 end
 
@@ -209,4 +220,38 @@ for ii = 1:numAxes
 end
 [sortedPositions,sortIndex] = sortrows(positions,[-2 1]);
 sortedAxes = arrayOfAxes(sortIndex);
+end
+
+function vol = getvol(isCheb, Nzc, zInds, params, regionOfInterest)
+
+if isCheb
+    %% Compute the area
+    % Compute the area associated with each Chebyshev point using the values
+    % halfway between the point below and above
+    zi = zgrid_reader;
+    [~, z1dc] = cheb(Nzc);
+    
+    % first do it on the standard interval
+    % the bottom and top most pts get a half grid box
+    arc(1) = 0.5*(z1dc(1)-z1dc(2));
+    arc(Nzc+1) = arc(1);
+    
+    % over the interior pts and store the grid boxes
+    arc(2:Nzc) = 0.5*(z1dc(1:end-2)-z1dc(2:end-1))+0.5*(z1dc(2:end-1)-z1dc(3:end));
+    
+    % now for each x point, stretch or shrink according to the local depth
+    Lznow = max(zi, [], 2) - min(zi, [], 2);
+    arcPhys = arc.*Lznow/2*(params.Lx/params.Nx);
+    
+    
+else
+    arcPhys = ones(size(x))*(params.Lx/params.Nx)*(params.Lz/params.Nz);
+end
+
+% Remove values that correspond to missing z values
+% and the total area
+arcPhys(regionOfInterest) = 0;
+arcPhys(~(zInds)) = 0;
+vol = sum(arcPhys(:));
+
 end

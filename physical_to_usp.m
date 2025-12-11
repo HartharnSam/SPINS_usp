@@ -1,4 +1,4 @@
-function physical_to_usp(ii, var1, var2, spatLims, varLims)
+function physical_to_usp(ii, var1, var2, spatLims, varLims, opts)
 %USP_TO_PHYSICAL - Reverse idea of usp_to_physical - click a grid location
 %and see where it sits in USP space, and identify other regions in the same
 %USP space. Not sure of it's utility... yet...
@@ -30,22 +30,31 @@ function physical_to_usp(ii, var1, var2, spatLims, varLims)
 %% BEGIN CODE %%
 %---------------------------------------------------
 %close all;
-% Option to invert the selected region (show outside the rectangle)
-isInvert = false;
+arguments 
+    ii (1, 1) uint16
+    var1 (1, 1) string
+    var2 (1, 1) string
+    spatLims (1, :) double = []
+    varLims (1, :) double = []
+    opts.data1 (:, :) double = []
+    opts.data2 (:, :) double = []
+    opts.isInvert (1, 1) logical = false;% Option to invert the selected region (show outside the rectangle)
+end
+
 %% Load in data
 % Compute the qsp data
 params = spins_params;
-if nargin < 4 || isempty(spatLims)
+if isempty(spatLims)
     xlims = [params.min_x params.min_x+params.Lx];
     spatLims = xlims;
 else
     xlims = spatLims([1 2]);
 end
-if nargin >= 4 && numel(spatLims) == 4
+if (numel(spatLims) == 4)
     zlims = spatLims([3 4]);
 else
     zlims = [params.min_z params.min_z+params.Lz];
-    spatLims([3 4]) = zlims;
+    %spatLims([3 4]) = zlims;
 end
 
 if nargin <= 4
@@ -57,59 +66,35 @@ end
 x = xgrid_reader();
 xminInd = nearest_index(x(:, 1), xlims(1));
 xmaxInd = nearest_index(x(:, 1), xlims(2));
-x = x(xminInd:xmaxInd, :);
 z = zgrid_reader(xminInd:xmaxInd, []);
 
-% note we still read in any z data from the region we want to cut due to
-% the complicated cheb grid
-switch var1
-    case 's'
-        data1 = spins_reader_new('s',ii, xminInd:xmaxInd, []);
-        data1 = data1.*(data1 > 0); % We always know for salinity -ve isn't real
-    case 'rho'
-        data1 = spins_reader_new('rho', ii, xminInd:xmaxInd, []);
-    case 'rho_z2'
-        try
-            data1 = spins_reader_new('rho_z', ii, xminInd:xmaxInd, []).^2;
-        catch
-            spins_derivs('rho_z', ii, true);
-            data1 = spins_reader_new('rho_z', ii, xminInd:xmaxInd, []).^2;
-        end
-    otherwise
-        try
-            data1 = spins_reader_new(var1, ii, xminInd:xmaxInd, []);
-        catch
-            error([var1, ' not configured']);
-        end
+isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP');
+
+if isequal(params.mapped_grid, 'true')
+    zInds = [];
+    x = x(xminInd:xmaxInd, :);
+    %z = z(xminInd:xmaxInd, :);
+    
+else
+    zminInd = nearest_index(z(1, :), zlims(1));
+    zmaxInd = nearest_index(z(1, :), zlims(2));
+    zInds = zminInd:zmaxInd;
+    x = x(xminInd:xmaxInd, zInds);
+    z = z(:, zInds);
 end
 
-switch lower(var2)
-    case 'ke'
-        u = spins_reader_new('u',ii, xminInd:xmaxInd, []);
-        w = spins_reader_new('w',ii, xminInd:xmaxInd, []);
-        data2 = 0.5*(u.^2+w.^2);
-    case 'vorty'
-        data2 = spins_reader_new('vorty', ii, xminInd:xmaxInd, []);
-    case 'enstrophy'
-        try
-            data2 = spins_reader_new('enstrophy', ii, xminInd:xmaxInd, []);
-        catch
-            data2 = 0.5*spins_reader_new('vorty', ii, xminInd:xmaxInd, []).^2;
-        end
-    case 'diss'
-        data2 = spins_reader_new('diss', ii, xminInd:xmaxInd, []);
-        data2 = log10(data2);
-    case 'speed'
-        u = spins_reader_new('u',ii, xminInd:xmaxInd, []);
-        w = spins_reader_new('w',ii, xminInd:xmaxInd, []);
-        data2 = sqrt(u.^2 + w.^2);
-    otherwise
-        try
-            data2 = spins_reader_new(var2, ii, xminInd:xmaxInd, []);
-        catch
-            error([var2, ' not configured']);
-        end
+%% Read in data
+if isempty(opts.data1)
+    data1 = get_spins_data(var1, ii, xminInd, xmaxInd, zInds);
+else
+    data1 = opts.data1;
 end
+if isempty(opts.data2)
+    data2 = get_spins_data(var2, ii, xminInd, xmaxInd, zInds);
+else
+    data2 = opts.data2;
+end
+
 
 %% And make the original plot
 tiledlayout(2, 1);
@@ -145,11 +130,14 @@ axis(ax2, [xlims zlims])
 %% Set region of interest
 axes(ax1);
 set(gcf, 'Position', groot().MonitorPositions(end, :));
-disp('Click the corners on the QSP plot to select your region of interest')
+disp('Click the point of interest on the upper plot')
 [xROI, zROI] = ginput(1);
 
 xROI_ind = nearest_index(x(:, 1), xROI);
 zROI_ind = nearest_index(z(xROI_ind, :), zROI);
+
+data1(data1>varLims(4)) = varLims(4);
+data2(data2>varLims(2)) = varLims(2);
 
 data1ROI = data1(xROI_ind, zROI_ind);
 data2ROI = data2(xROI_ind, zROI_ind);
@@ -167,17 +155,19 @@ ax1USP = aces(1);
 ax2USP = aces(2);
 ax3_usp = aces(4);
 hold(ax3_usp, 'on')
-plot(ax3_usp, data1ROI, data2ROI, 'xw');
+plot(ax3_usp, data1ROI, data2ROI, 'xw', 'MarkerSize',10);
+plot(ax3_usp, data1ROI, data2ROI, 'xk', 'MarkerSize', 5);
+
 plot(ax1USP, xROI, zROI, 'xw');
 plot(ax2USP, xROI, zROI, 'xw');
 
 %% plot a ROI plot based on the single bin
 % but first, identify the bin
 data1Bin = interp1(myVar1, 1:length(myVar1), data1ROI);
-data1Bin = myVar1(floor(data1Bin) + 0:1);
+data1Bin = myVar1(floor(data1Bin) + (0:1));
 
 data2Bin = interp1(myVar2, 1:length(myVar2), data2ROI);
-data2Bin = myVar1(floor(data2Bin) + 0:1);
+data2Bin = myVar2(floor(data2Bin) + (0:1))';
 
 % Run usp_to_physical, feeding in the single-bin ROI
 figure
