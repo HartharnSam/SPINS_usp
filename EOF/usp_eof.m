@@ -1,4 +1,4 @@
-function [eof, pc, error] = usp_eof(t1, t2, var1, var2, t_select, numMode, spatLims, varLims, calcUSP)
+function [eof, coeff, eof_error] = usp_eof(t1, t2, var1, var2, numMode, spatLims, varLims, calcUSP, doPlots, t_select)
 %USP_EOF - Compute EOF error maps for feature identification in USP plots,
 %as a tool for identifying key timesteps
 %
@@ -36,19 +36,19 @@ function [eof, pc, error] = usp_eof(t1, t2, var1, var2, t_select, numMode, spatL
 %% Set up optional input parameters
 params = spins_params;
 
-if nargin < 9
+if nargin < 8
     if isfile('all_qsp.mat')
         calcUSP = false;
     else
         calcUSP = true;
     end
 end
-if nargin < 7 || isempty(spatLims)
+if nargin < 6 || isempty(spatLims)
     spatLims = [params.min_x params.Lx params.min_z params.Ly];
 end
 
 %% Load in data
-if nargin < 8 || (isempty(varLims))
+if nargin < 7 || (isempty(varLims))
     [usp, myVar1, myVar2, varLims] = usp_2d(mean(t1, t2), var1, var2, spatLims);%[0 params.Lx params.min_z params.min_z + params.Lz]);
 else
     [usp, myVar1, myVar2, ~] = usp_2d(mean(t1, t2), var1, var2, spatLims, varLims);%[0 params.Lx params.min_z params.min_z + params.Lz]);
@@ -72,7 +72,9 @@ load('all_qsp', 'usp_timeseries');
 [m, n, o] = size(usp_timeseries);
 error_contour = 0.05;
 eof_input_data = reshape(usp_timeseries, m*n, o);
-[eof_error, u, coeff] = eof_error_map(eof_input_data, o);
+[eof_error, eof, coeff] = eof_error_map(eof_input_data, numMode);
+eof = reshape(eof, m, n, numMode);
+if doPlots
 tiledlayout(2,1);
 nexttile;
 imagesc(t1:t2, 1:size(usp_timeseries,3), eof_error); shading flat; colorbar;
@@ -98,11 +100,12 @@ ylabel('Coefficient');
 xlabel('$time (s)$');
 
 figure_print_format(gcf);
-
+end
 %% Plot the modes themselves ( generally not useful)
+if doPlots
 figure;
 for ii = 1:numMode
-    u2 = reshape(u(:, ii), n, m);
+    u2 = reshape(eof(:, ii), n, m);
     subplot(numMode, 1, ii);
     temp_data = u2+(1.5*min(u2));
     temp_data(temp_data<=0) = NaN;
@@ -125,7 +128,7 @@ axis tight;%caxis([0 0.05])
 recon_temp = zeros(m*n, o); % loop variable for reconstruction
 
 for ii = 1:numMode
-    recon_temp = recon_temp + (u(:, ii)*coeff(ii, :));
+    recon_temp = recon_temp + (eof(:, ii)*coeff(ii, :));
 end
 
 recon_data = bsxfun(@plus, recon_temp(:, t_select), mean(eof_input_data,2)); % remove mean
@@ -135,4 +138,5 @@ recon_data = reshape(recon_data, m, n);
 % And plot this
 subaxis(1, 2, 2)
 pcolor(log10(recon_data)); shading flat; colormap(plasma)
-colorbar;axis tight; caxis([-6 -.9])
+colorbar;axis tight; clim([-6 -.9])
+end

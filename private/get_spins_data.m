@@ -10,7 +10,13 @@ switch lower(var)
         try
             data = spins_reader_new('enst', ii, xminInd:xmaxInd, zInds);
         catch
-            data = 0.5*spins_reader_new('vorty', ii, xminInd:xmaxInd, zInds).^2;
+            try
+                data = 0.5*spins_reader_new('vorty', ii, xminInd:xmaxInd, zInds).^2;
+            catch
+                spins_derivs('vorty', ii, true);
+                data = 0.5*spins_reader_new('vorty', ii, xminInd:xmaxInd, zInds).^2;
+
+            end
         end
     case 'ke'
         u = spins_reader_new('u', ii, xminInd:xmaxInd, zInds);
@@ -31,7 +37,7 @@ switch lower(var)
     case 'diss'
         try
             data = spins_reader_new('diss', ii, xminInd:xmaxInd, zInds);
-        catch 
+        catch
             data = spins_derivs('diss', ii, true);
             data = data(xminInd:xmaxInd, zInds);
         end
@@ -67,6 +73,18 @@ switch lower(var)
             spins_derivs('u_z', ii, true);
             data = spins_reader_new('u_z', ii, xminInd:xmaxInd, zInds).^2;
             delete("u_z."+ii);
+        end
+    case 'grad_rho'
+        try
+            data = spins_reader_new('rho_z', ii, xminInd:xmaxInd, zInds).^2;
+            data = data + spins_reader_new('rho_x', ii, xminInd:xmaxInd, zInds).^2;
+            data = sqrt(data);
+        catch
+            spins_derivs('rho_z', ii, true); spins_derivs('rho_x', ii, true);
+            data = spins_reader_new('rho_z', ii, xminInd:xmaxInd, zInds).^2;
+            data = data + spins_reader_new('rho_x', ii, xminInd:xmaxInd, zInds).^2;
+            data = sqrt(data);
+            delete("rho_z."+ii);
         end
     otherwise
         try

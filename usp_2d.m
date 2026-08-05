@@ -13,9 +13,7 @@ function [usp, myVar1, myVar2, varLims] = usp_2d(ii, var1, var2, spatLims, varLi
 %    spatLims   - [optional] Spatial limits in the format [xmin xmax zmin zmax]
 %               Defaults to full size of tank, optionally only [xmin xmax]
 %    varLims    - [optional] limits of variables to investigate in the format
-%               [var2min var2max var1min var2max]. Note: the order is var2
-%               (y-axis), var1 (x-axis) as it is more common to set only
-%               the y limits [var2min var2max] than only x!
+%               [var1min var1max var2min var2max]. 
 %   isPlot      - [Optional] Boolean flag for making a plot (true by default)
 %   opts        - [Optional] Variable-Value pairs to input data directly
 %
@@ -112,45 +110,46 @@ end
 %% Sort data into the histogram "boxes"
 numpts = 50;
 % for variable on x
+
+if (nargin <= 4) || (isempty(varLims)) % Use defaults
+    var1min = min(data1(:));
+    var1max = max(data1(:));
+else
+    var1min = varLims(1);
+    var1max = varLims(2);
+end
+data1(data1 < var1min) = var1min;
+data1(data1 > var1max) = var1max;
+
+rangeVar1 = var1max-var1min;
+dVar1 = rangeVar1/(numpts-1);
+myVar1 = var1min+(0.5:numpts-0.5)'*dVar1;
+
+% For variable on y
 if (nargin > 4) && (numel(varLims) == 4)
-    var1min = varLims(3); var1max = varLims(4);
+    var2min = varLims(3); var2max = varLims(4);
 else % Use defaults for the var1 limits
     %if strcmpi(var1, 'rho')
     %    var1min = -params.delta_rho/2;
     %    var1max = -var1min;
     %else
-    var1min = min(data1(:));
-    var1max = max(data1(:));
+    var2min = min(data2(:));
+    var2max = max(data2(:));
     %end
 end
 % Cap the values at the limits - ignoring these values by NaN'ing them
 % would be a reasonable choice, but requires some more coding to make it
 % work
-data1(data1 < var1min) = var1min;
-data1(data1 > var1max) = var1max;
-
-ranges = var1max-var1min;
-dVar1 = ranges/(numpts-1);
-myVar1 = var1min+(0.5:numpts-0.5)*dVar1;
-
-% For variable on y (KE)
-if (nargin <= 4) || (isempty(varLims)) % Use defaults
-    var2min = min(data2(:));
-    var2max = max(data2(:));
-else
-    var2min = varLims(1);
-    var2max = varLims(2);
-end
 data2(data2 < var2min) = var2min;
 data2(data2 > var2max) = var2max;
 
-rangeVar2 = var2max-var2min;
-dVar2 = rangeVar2/(numpts-1);
-myVar2 = var2min+(0.5:numpts-0.5)'*dVar2;
-
-myhist = zeros(numpts,numpts);
+ranges = var2max-var2min;
+dVar2 = ranges/(numpts-1);
+myVar2 = var2min+(0.5:numpts-0.5)*dVar2;
 
 %figure out which box coordinate you are in
+myhist = zeros(numpts,numpts);
+
 var1box = ceil((data1-var1min)/dVar1);
 var1box = var1box+1*(data1 == var1min);
 

@@ -13,9 +13,7 @@ function [ROI, vol] = usp_to_physical(ii, var1, var2, spatLims, varLims, region,
 %    spatLims   - [optional] Spatial limits in the format [xmin xmax zmin zmax]
 %               Defaults to full size of tank, optionally only [xmin xmax]
 %    varLims    - [optional] limits of variables to investigate in the format
-%               [var2min var2max var1min var2max]. Note: the order is var2
-%               (y-axis), var1 (x-axis) as it is more common to set only
-%               the y limits [var2min var2max] than only x!
+%               [var1min var1max var2min var2max]. 
 %    region     - [optional] USP region of interest to display data for. If
 %               empty, the user will be prompted to interactively provide
 %               it
@@ -154,7 +152,7 @@ if (nargout ~= 1) && opts.isPlot
     hold off
     pcolor(ax1, x, z, data1); shading flat;
     title(['t = ', num2str(ii)]);
-    caxis(var1ROI);
+    clim(var1ROI);
     colormap(gca, cmocean('dense'));
     c = colorbar('location', 'EastOutside');
     ylabel(c, axLab1); ylabel('z (m)');
@@ -167,7 +165,7 @@ if (nargout ~= 1) && opts.isPlot
     axes(ax2);
     hold off
     pcolor(ax2, x, z, data2); shading flat;
-    caxis(var2ROI);
+    clim(var2ROI);
     if strcmpi(var2, 'vorty')
         colormap(gca, cmocean('balance'));
     else
@@ -199,7 +197,7 @@ end
 
 if (nargout == 2)
     isCheb = isequal(params.mapped_grid, 'true') || isequal(params.type_z, 'NO_SLIP');
-    [Nx, Nz] = size(x);
+    [~, Nz] = size(x);
     
     % parameter for the chebyshev grid which are on [-1,1]
     Nzc = Nz-1;
